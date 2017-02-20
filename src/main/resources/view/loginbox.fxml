@@ -8,7 +8,7 @@
 
 <VBox fx:id="loginBox" alignment="CENTER" maxHeight="200.0" maxWidth="170.0" minHeight="200.0" minWidth="170.0" prefHeight="200.0" prefWidth="170.0" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="login.LoginController">
    <children>
-      <Label prefHeight="17.0" prefWidth="203.0" text="Server info (host:port)" />
+      <Label text="Server info (host:port)" />
       <TextField fx:id="conField" />
       <Label text="File location" />
       <TextField fx:id="fileField" />

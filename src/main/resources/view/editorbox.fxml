@@ -8,7 +8,7 @@
    <children>
       <TextFlow>
          <children>
-            <TextArea fx:id="editor" prefHeight="655.0" prefWidth="600.0" />
+            <TextArea fx:id="editor" prefHeight="640.0" prefWidth="600.0" />
          </children>
       </TextFlow>
    </children>
