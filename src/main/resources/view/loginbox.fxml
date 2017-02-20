@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="loginBox" alignment="CENTER" maxHeight="200.0" maxWidth="170.0" minHeight="200.0" minWidth="170.0" prefHeight="200.0" prefWidth="170.0" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="login.LoginController">
+   <children>
+      <Label prefHeight="17.0" prefWidth="203.0" text="Server info (host:port)" />
+      <TextField fx:id="conField" />
+      <Label text="File location" />
+      <TextField fx:id="fileField" />
+      <Label text="Alias" />
+      <TextField fx:id="aliasField" />
+      <Button fx:id="conButton" alignment="CENTER" mnemonicParsing="false" onAction="#connect" prefHeight="27.0" prefWidth="100.0" text="Connect">
+         <VBox.margin>
+            <Insets />
+         </VBox.margin>
+      </Button>
+   </children>
+</VBox>

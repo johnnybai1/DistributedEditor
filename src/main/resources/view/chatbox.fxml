@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="chatBox" prefHeight="640.0" prefWidth="350.0" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="chat.ChatController">
+   <children>
+      <TextArea fx:id="messages" prefHeight="600.0" prefWidth="350.0" />
+      <TextField fx:id="input" prefHeight="30.0" prefWidth="350.0" />
+   </children>
+</VBox>
