@@ -18,7 +18,7 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-        ctx.writeAndFlush("Welcome to the collaborator's chat\r\n");
+        ctx.writeAndFlush("Welcome to the collaborators' chat\r\n");
         channels.add(ctx.channel());
     }
 

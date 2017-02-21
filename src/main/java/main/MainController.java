@@ -30,6 +30,12 @@ public class MainController {
         chatController.getInput().disableProperty().bind(loginController.getConnectPressed().not());
         editorController.getEditor().disableProperty().bind(loginController.getConnectPressed().not());
         loginController.getLoginBox().disableProperty().bind(loginController.getConnectPressed());
+
+    }
+
+    @FXML
+    public void printLog() {
+        editorController.printLog();
     }
 
 
