@@ -11,8 +11,12 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import main.MainController;
+
+import java.awt.event.KeyEvent;
+import java.io.File;
 
 public class LoginController {
 
@@ -42,6 +46,13 @@ public class LoginController {
 
     @FXML
     public void initialize() {
+        conField.setText("localhost:9000"); // default
+        fileField.setText("/Users/Johnny/Documents/TEST.txt");
+        loginBox.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                connect();
+            }
+        });
     }
 
     @FXML
@@ -59,6 +70,12 @@ public class LoginController {
             mainController.chatController.setAlias(alias);
             mainController.chatController.setChannel(channel);
             connectPressed.set(true);
+            if (!filePath.isEmpty()) {
+                File f = new File(filePath);
+                if (f.exists() && f.isFile() && f.canRead()) {
+                    mainController.editorController.populateEditor(f);
+                }
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
