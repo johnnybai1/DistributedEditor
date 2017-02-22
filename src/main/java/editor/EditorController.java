@@ -61,14 +61,11 @@ public class EditorController {
                     op = new Operation(Operation.INSERT);
                     op.startPos = editor.getCaretPosition();
                 }
-                if (c.equals("\r")) {
-                    op.content = op.content + "\r\n";
-                }
-                else op.content = op.content + c;
+                op.content += c;
                 if (c.equals("\r") || c.equals(" ")) {
                     // Enter pressed or Space pressed
-                    System.out.println("Space or Enter hit, adding: " + op);
                     op.finalPos = editor.getCaretPosition();
+                    System.out.println("Space or Enter hit, adding: " + op);
                     opLog.push(op);
                     op = null;
                 }

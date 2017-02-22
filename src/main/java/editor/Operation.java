@@ -31,6 +31,9 @@ public class Operation {
         sb.append(finalPos);
         sb.append(" ");
         sb.append(content.trim());
+        sb.append(" (");
+        sb.append(content.length());
+        sb.append(")");
         sb.append("]");
         return sb.toString();
     }
