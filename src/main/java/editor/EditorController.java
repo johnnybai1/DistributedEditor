@@ -123,6 +123,13 @@ public class EditorController {
     }
 
     /**
+     * Updates the editor text area based on the Operation specified.
+     */
+    public void apply(Operation op) {
+
+    }
+
+    /**
      * Prints the current log of operations
      */
     public void printLog() {

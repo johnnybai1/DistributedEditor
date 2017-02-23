@@ -14,6 +14,7 @@
             <items>
               <MenuItem mnemonicParsing="false" text="Close" />
               <MenuItem mnemonicParsing="false" text="Print Log" onAction="#printLog"/>
+              <MenuItem mnemonicParsing="false" text="ApplyOperation" onAction="#apply"/>
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Edit">

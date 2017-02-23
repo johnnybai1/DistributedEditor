@@ -2,6 +2,7 @@ package main;
 
 import chat.ChatController;
 import editor.EditorController;
+import editor.Operation;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuBar;
 import login.LoginController;
@@ -36,6 +37,15 @@ public class MainController {
     @FXML
     public void printLog() {
         editorController.printLog();
+    }
+
+    @FXML
+    public void apply() {
+        Operation op1 = new Operation(Operation.INSERT);
+//        Operation op2 = new Operation(Operation.DELETE);
+        editorController.apply(op1);
+//        editorController.apply(op2);
+
     }
 
 
