@@ -42,7 +42,7 @@ public class MainController {
 
     @FXML
     public void printServerLog() {
-        ChatServer.printOpLog();
+        editorController.send("PRINT");
     }
 
     @FXML

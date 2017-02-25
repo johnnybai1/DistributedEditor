@@ -121,7 +121,6 @@ public class EditorController {
         // TODO: track where the caret currently is BEFORE the click occurred
         // Currently just prints where the caret position is when you clicked
         editor.setOnMouseClicked(event -> {
-
 //            if (op != null) {
 //                opLog.push(op);
 //                op = null;
@@ -149,17 +148,15 @@ public class EditorController {
     @FXML
     public void send(String msg) {
         Task<Void> task = new Task<Void>() {
-
             @Override
             protected Void call() throws Exception {
-                ChannelFuture f = channel.writeAndFlush(msg);
+                ChannelFuture f = channel.writeAndFlush(msg + "\r\n");
                 f.sync();
                 return null;
             }
-
             @Override
             protected void succeeded() {
-                System.out.println("SENT OPERATION TO SERVER");;
+                System.out.println("SENT OPERATION TO SERVER: " + msg);
             }
         };
         new Thread(task).start();

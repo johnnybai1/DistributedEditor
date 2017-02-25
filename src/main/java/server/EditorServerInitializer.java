@@ -8,10 +8,15 @@ import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 
 public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
 
-    public EditorServerInitializer() {
+    ConcurrentLinkedQueue<String> opLog;
+
+    public EditorServerInitializer(ConcurrentLinkedQueue<String> opLog) {
+        this.opLog = opLog;
     }
 
 
@@ -23,7 +28,6 @@ public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
                 8192, Delimiters.lineDelimiter()));
         pipeline.addLast("string decoder", new StringDecoder());
         pipeline.addLast("string encoder", new StringEncoder());
-
-        pipeline.addLast("ot logic", new EditorServerHandler());
+        pipeline.addLast("ot logic", new EditorServerHandler(opLog));
     }
 }

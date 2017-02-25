@@ -1,6 +1,5 @@
 package server;
 
-import editor.Operation;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -19,7 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class ChatServer {
 
-    public static final ConcurrentLinkedQueue<String> opLog = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<String> opLog = new ConcurrentLinkedQueue<>();
 
     private int port;
 
@@ -29,13 +28,6 @@ public class ChatServer {
 
     public ChatServer() throws Exception {
         this(9000);
-    }
-
-    public static void printOpLog() {
-        for (String op : opLog) {
-            System.err.println(op);
-        }
-        System.err.println(opLog.size());
     }
 
     public void run() throws Exception {
@@ -56,7 +48,7 @@ public class ChatServer {
             editor.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new EditorServerInitializer());
+                    .childHandler(new EditorServerInitializer(opLog));
             futures.add(editor.bind(port+1));
             for (ChannelFuture cf : futures) {
                 cf.sync().channel().closeFuture().sync();

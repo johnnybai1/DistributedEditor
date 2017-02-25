@@ -14,7 +14,7 @@ import java.net.InetAddress;
 
 public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
 
-    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
@@ -25,7 +25,7 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) {
         // Send received message to all clients
-        System.err.println("RECEIVED: " + msg);
+        System.err.println("CHAT RECEIVED: " + msg);
         for (Channel c: channels) {
                 c.writeAndFlush(msg + "\n");
         }
