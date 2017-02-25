@@ -80,7 +80,7 @@ public class LoginController {
                     .group(editorGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new EditorClientInitializer(mainController.editorController));
-            editorChannel = b.connect(host, port+1).sync().channel();
+            editorChannel = e.connect(host, port+1).sync().channel();
             mainController.editorController.setChannel(editorChannel);
 
             connectPressed.set(true);
