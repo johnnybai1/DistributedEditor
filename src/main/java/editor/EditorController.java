@@ -93,8 +93,9 @@ public class EditorController {
                 }
                 // Append characters to track changes
                 op.content += c;
-                if (c.equals("\r") || c.equals(" ")) {
-                    // Enter pressed or Space pressed
+                if (c.equals("\r") || c.equals(" ") ||
+                        c.equals(".")) {
+                    // Enter, space, or period triggers a push
                     // Final Position may not be needed for inserts, since we can
                     // simply get op.content.length()
                     op.finalPos = editor.getCaretPosition();
