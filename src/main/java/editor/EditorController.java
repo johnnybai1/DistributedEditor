@@ -1,9 +1,14 @@
 package editor;
 
 import javafx.fxml.FXML;
+
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.animation.KeyFrame;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import javafx.event.*;
 import main.MainController;
 
 import java.io.BufferedReader;
@@ -21,7 +26,8 @@ public class EditorController {
     private Operation op; // "current" operation we are building
 
     private File editingFile;
-
+    private static final int IDLE_CHECK_TIME = 30;
+    
     private MainController mainController;
 
     public EditorController() {
@@ -33,8 +39,35 @@ public class EditorController {
         this.mainController = mainController;
     }
 
-    @FXML
-    public void initialize() {
+    @SuppressWarnings("restriction")
+	@FXML
+    public void initialize() {    	
+    	
+    	// Timer to check if user is idle, runs every 30 seconds
+		Timeline idleCheck = new Timeline(new KeyFrame(Duration.seconds(IDLE_CHECK_TIME), new EventHandler<ActionEvent>() {
+			Operation previousOp = op; // what previous operation was IDLE_CHECK_TIME seconds ago
+    	    @Override
+    	    public void handle(ActionEvent event) {
+    	    	if (op != null)
+    	    	{
+    	    		// check if previous operation equal to current operation
+    	    		if (previousOp != null && previousOp.equals(op))
+    	    		{
+    	    			// user is idle
+                        op.finalPos = editor.getCaretPosition();
+                        System.out.println("User is idle, adding: " + op);
+                        // Push to logs
+                        opLog.push(op);
+                        // Make current op null again
+                        op = null;    	    		
+                    }
+    	    	}
+    	    	previousOp = op; // update previous operation to current operation
+    	    }
+    	}));
+    	idleCheck.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
+    	idleCheck.play();
+    	
         editor.setWrapText(true);
         editor.setDisable(true);
         editor.setOnKeyTyped(event -> {
@@ -150,3 +183,4 @@ public class EditorController {
 
 
 }
+
