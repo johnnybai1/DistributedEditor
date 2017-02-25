@@ -16,6 +16,27 @@ public class Operation {
         content = "";
     }
 
+    /**
+     * String representation of an Operation, understood by the Server
+     */
+    public String stringToSend() {
+        StringBuilder sb = new StringBuilder();
+        if (type == INSERT) {
+            sb.append("INS ");
+        }
+        if (type == DELETE) {
+            sb.append("DEL ");
+        }
+        sb.append(startPos);
+        sb.append(":");
+        sb.append(finalPos);
+        sb.append(" ");
+        sb.append(content.length());
+        sb.append(" ");
+        sb.append(content);
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

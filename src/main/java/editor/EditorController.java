@@ -1,5 +1,8 @@
 package editor;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 
 import javafx.animation.Timeline;
@@ -10,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.event.*;
 import main.MainController;
+import server.ChatServer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,7 +32,8 @@ public class EditorController {
     private File editingFile;
     private static final int IDLE_CHECK_TIME = 30;
     
-    private MainController mainController;
+    private MainController mainController; // To communicate with other controllers
+    private Channel channel; // To communicate with Server
 
     public EditorController() {
         opLog = new Stack<>();
@@ -37,6 +42,10 @@ public class EditorController {
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     @SuppressWarnings("restriction")
@@ -102,6 +111,7 @@ public class EditorController {
                     System.out.println("Space or Enter hit, adding: " + op);
                     // Push to logs
                     opLog.push(op);
+                    send(op.stringToSend()); // To test send to serverLog
                     // Make current op null again
                     op = null;
                 }
@@ -134,6 +144,25 @@ public class EditorController {
                 }
             }
         });
+    }
+
+    @FXML
+    public void send(String msg) {
+        Task<Void> task = new Task<Void>() {
+
+            @Override
+            protected Void call() throws Exception {
+                ChannelFuture f = channel.writeAndFlush(msg);
+                f.sync();
+                return null;
+            }
+
+            @Override
+            protected void succeeded() {
+                System.out.println("SENT OPERATION TO SERVER");;
+            }
+        };
+        new Thread(task).start();
     }
 
     /**

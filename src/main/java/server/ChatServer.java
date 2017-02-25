@@ -1,20 +1,25 @@
 package server;
 
+import editor.Operation;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**
  * Receives string messages from clients and broadcasts them back to clients
  */
 public class ChatServer {
+
+    public static final ConcurrentLinkedQueue<String> opLog = new ConcurrentLinkedQueue<>();
 
     private int port;
 
@@ -26,16 +31,36 @@ public class ChatServer {
         this(9000);
     }
 
+    public static void printOpLog() {
+        for (String op : opLog) {
+            System.err.println(op);
+        }
+        System.err.println(opLog.size());
+    }
+
     public void run() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        List<ChannelFuture> futures = new ArrayList<>();
         try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
+            // Start the chat server
+            ServerBootstrap chat = new ServerBootstrap();
+            chat.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChatServerInitializer());
-            b.bind(port).sync().channel().closeFuture().sync();
+            futures.add(chat.bind(port));
+//            b.bind(port).sync().channel().closeFuture().sync();
+            // Start the editor server
+            ServerBootstrap editor = new ServerBootstrap();
+            editor.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .childHandler(new EditorServerInitializer());
+            futures.add(editor.bind(port+1));
+            for (ChannelFuture cf : futures) {
+                cf.sync().channel().closeFuture().sync();
+            }
         }
         finally {
             bossGroup.shutdownGracefully();

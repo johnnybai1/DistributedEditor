@@ -8,7 +8,11 @@ import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
-public class ChatServerInitializer extends ChannelInitializer<SocketChannel> {
+
+public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
+
+    public EditorServerInitializer() {
+    }
 
 
     @Override
@@ -20,7 +24,6 @@ public class ChatServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("string decoder", new StringDecoder());
         pipeline.addLast("string encoder", new StringEncoder());
 
-        pipeline.addLast("chat logic", new ChatServerHandler());
+        pipeline.addLast("ot logic", new EditorServerHandler());
     }
-
 }

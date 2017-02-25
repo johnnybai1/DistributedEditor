@@ -6,6 +6,7 @@ import editor.Operation;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuBar;
 import login.LoginController;
+import server.ChatServer;
 
 public class MainController {
 
@@ -37,6 +38,11 @@ public class MainController {
     @FXML
     public void printLog() {
         editorController.printLog();
+    }
+
+    @FXML
+    public void printServerLog() {
+        ChatServer.printOpLog();
     }
 
     @FXML

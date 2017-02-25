@@ -25,6 +25,7 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) {
         // Send received message to all clients
+        System.err.println("RECEIVED: " + msg);
         for (Channel c: channels) {
                 c.writeAndFlush(msg + "\n");
         }

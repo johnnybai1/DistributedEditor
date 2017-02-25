@@ -1,6 +1,7 @@
 package login;
 
 import chat.ChatClientInitializer;
+import editor.EditorClientInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -34,8 +35,11 @@ public class LoginController {
     private int port;
     private String filePath;
 
-    private Channel channel;
-    private EventLoopGroup group;
+    private Channel chatChannel;
+    private EventLoopGroup chatGroup;
+
+    private Channel editorChannel;
+    private EventLoopGroup editorGroup;
 
     public LoginController() {
     }
@@ -59,16 +63,26 @@ public class LoginController {
     public void connect() {
         // if connected, do stuff, return true
         extractFields();
-        group = new NioEventLoopGroup();
+        chatGroup = new NioEventLoopGroup();
+        editorGroup = new NioEventLoopGroup();
         try {
             Bootstrap b = new Bootstrap();
             b
-                    .group(group)
+                    .group(chatGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new ChatClientInitializer(mainController.chatController));
-            channel = b.connect(host, port).sync().channel();
+            chatChannel = b.connect(host, port).sync().channel();
             mainController.chatController.setAlias(alias);
-            mainController.chatController.setChannel(channel);
+            mainController.chatController.setChannel(chatChannel);
+
+            Bootstrap e = new Bootstrap();
+            e
+                    .group(editorGroup)
+                    .channel(NioSocketChannel.class)
+                    .handler(new EditorClientInitializer(mainController.editorController));
+            editorChannel = b.connect(host, port+1).sync().channel();
+            mainController.editorController.setChannel(editorChannel);
+
             connectPressed.set(true);
             if (!filePath.isEmpty()) {
                 File f = new File(filePath);
@@ -122,8 +136,12 @@ public class LoginController {
         return filePath;
     }
 
-    public Channel getChannel() {
-        return channel;
+    public Channel getChatChannel() {
+        return chatChannel;
+    }
+
+    public Channel getEditorChannel() {
+        return editorChannel;
     }
 
 
