@@ -16,29 +16,33 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import main.MainController;
 
-import java.awt.event.KeyEvent;
 import java.io.File;
 
+/**
+ * Responsible for establishing a connection to the chat and editor servers as
+ * well as loading the specified text file.
+ */
 public class LoginController {
 
+    // To track whether or not we have connected yet
     private BooleanProperty connectPressed = new SimpleBooleanProperty(false);
-    @FXML VBox loginBox;
-    @FXML TextField conField;
-    @FXML TextField fileField;
-    @FXML TextField aliasField;
-    @FXML Button conButton;
+    @FXML VBox loginBox; // Container holding the login feature
+    @FXML TextField conField; // Connection information field
+    @FXML TextField fileField; // File path field
+    @FXML TextField aliasField; // Chatting alias field
+    @FXML Button conButton; // Clickable button to execute the connect operation
 
-    private MainController mainController;
+    private MainController mainController; // To communicate with other controllers
 
-    private String alias;
-    private String host;
-    private int port;
-    private String filePath;
+    private String alias; // parsed from alias field
+    private String host; // parsed from connection field
+    private int port; // parsed from connection field
+    private String filePath; // parsed for file path field
 
-    private Channel chatChannel;
+    private Channel chatChannel; // connection to server handling chat messages
     private EventLoopGroup chatGroup;
 
-    private Channel editorChannel;
+    private Channel editorChannel; // connection to server handling editing operations
     private EventLoopGroup editorGroup;
 
     public LoginController() {
@@ -51,7 +55,7 @@ public class LoginController {
     @FXML
     public void initialize() {
         conField.setText("localhost:9000"); // default
-        fileField.setText("/Users/Johnny/Documents/TEST.txt");
+        fileField.setText("/Users/Johnny/Documents/TEST.txt"); // default
         loginBox.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 connect();
@@ -60,30 +64,39 @@ public class LoginController {
     }
 
     @FXML
+    /**
+     * Based off on the information entered in the login box fields, attempt
+     * to establish a connection.
+     */
     public void connect() {
-        // if connected, do stuff, return true
         extractFields();
         chatGroup = new NioEventLoopGroup();
         editorGroup = new NioEventLoopGroup();
         try {
-            Bootstrap b = new Bootstrap();
-            b
+            // Establish connection to MainServer
+            Bootstrap bsChat = new Bootstrap();
+            bsChat
                     .group(chatGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new ChatClientInitializer(mainController.chatController));
-            chatChannel = b.connect(host, port).sync().channel();
+            chatChannel = bsChat.connect(host, port).sync().channel();
             mainController.chatController.setAlias(alias);
             mainController.chatController.setChannel(chatChannel);
 
-            Bootstrap e = new Bootstrap();
-            e
+            // Establish connection to EditorServer
+            Bootstrap bsEditor = new Bootstrap();
+            bsEditor
                     .group(editorGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new EditorClientInitializer(mainController.editorController));
-            editorChannel = e.connect(host, port+1).sync().channel();
+            editorChannel = bsEditor.connect(host, port+1).sync().channel();
             mainController.editorController.setChannel(editorChannel);
 
-            connectPressed.set(true);
+            connectPressed.set(true); // Connection established
+
+            // Load the specified file if possible
+            // TODO: Check server for file?
+            // TODO: If file does not exist on server/locally, create file?
             if (!filePath.isEmpty()) {
                 File f = new File(filePath);
                 if (f.exists() && f.isFile() && f.canRead()) {

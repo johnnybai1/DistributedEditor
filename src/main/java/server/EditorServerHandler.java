@@ -9,24 +9,31 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
+/**
+ * Defines how the Editor Server handles incoming Operation objects
+ */
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
     final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     private ConcurrentLinkedQueue<Operation> opLog;
-
 
     public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
         this.opLog = opLog;
     }
 
     @Override
+    /**
+     * Called when a connection is established.
+     */
     public void channelActive(final ChannelHandlerContext ctx) {
         channels.add(ctx.channel());
-        ctx.writeAndFlush("Welcome to the editors' chat\r\n");
+        ctx.writeAndFlush("Welcome to the editing\r\n");
     }
 
     @Override
+    /**
+     * Called when an Operation object arrives in the channel.
+     */
     protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
         if (op.type == Operation.PRINT) {
             System.err.println("=================================");

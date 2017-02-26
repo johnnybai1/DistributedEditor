@@ -2,8 +2,10 @@ package editor;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import javafx.application.Platform;
 
+/**
+ * Handles incoming Operation objects from the server.
+ */
 public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> {
 
     private EditorController controller;
@@ -13,8 +15,12 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
     }
 
     @Override
+    /**
+     * Called when an Operation object arrives in this channel.
+     */
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
+        // TODO: Apply the op to editor's text area
     }
 
     @Override

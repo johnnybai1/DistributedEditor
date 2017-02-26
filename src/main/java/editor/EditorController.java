@@ -13,7 +13,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.event.*;
 import main.MainController;
-import server.ChatServer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,17 +22,17 @@ import java.util.Stack;
 
 public class EditorController {
 
-    @FXML VBox editorBox;
-    @FXML TextArea editor;
+    @FXML VBox editorBox; // Container holding the editor TextArea
+    @FXML TextArea editor; // To display and edit contents of a text file
 
     private Stack<Operation> opLog; // Useful for REDO functionality
-    private Operation op; // "current" operation we are building
+    private Operation op; // current operation we are building
 
-    private File editingFile;
+    private File editingFile; // current file we are modifying
     private static final int IDLE_CHECK_TIME = 30;
     
     private MainController mainController; // To communicate with other controllers
-    private Channel channel; // To communicate with Server
+    private Channel channel; // Connection to server
 
     public EditorController() {
         opLog = new Stack<>();
@@ -77,11 +76,11 @@ public class EditorController {
     	idleCheck.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
     	idleCheck.play();
     	
-        editor.setWrapText(true);
-        editor.setDisable(true);
+        editor.setWrapText(true); // Will be enabled upon connect
+        editor.setDisable(true); // Will be enabled upon connect
         editor.setOnKeyTyped(event -> {
-            // getCode() will be undefined for typed characters
-            String c = event.getCharacter();
+            // KeyTyped refers to keys pressed that can be displayed in the TextArea
+            String c = event.getCharacter(); // what we typed
             if (!c.isEmpty()) {
                 if (op == null) {
                     // Create a new operation since none existed before
@@ -91,34 +90,27 @@ public class EditorController {
                 }
                 // We had a series of deletes, but now we have an insert
                 if (op.type == Operation.DELETE) {
-                    // Set final position of caret
-                    op.finalPos = editor.getCaretPosition();
-                    // Push the delete op into logs
-                    opLog.push(op);
-                    // Create new Operation for these inserts
-                    op = new Operation(Operation.INSERT);
-                    // Set start position
-                    op.startPos = editor.getCaretPosition();
+                    op.finalPos = editor.getCaretPosition(); // Set final position of caret
+                    opLog.push(op); // Push the delete op into logs
+                    op = new Operation(Operation.INSERT); // Create new Operation for these inserts
+                    op.startPos = editor.getCaretPosition(); // Set start position
                 }
-                // Append characters to track changes
-                op.content += c;
+                op.content += c; // Append characters to track changes
                 if (c.equals("\r") || c.equals(" ") ||
                         c.equals(".")) {
-                    // Enter, space, or period triggers a push
-                    // Final Position may not be needed for inserts, since we can
-                    // simply get op.content.length()
+                    // Enter, space, or period triggers a push.
+                    // Final Position may not be needed for inserts, since we
+                    // can simply get op.content.length() for inserts.
                     op.finalPos = editor.getCaretPosition();
-                    System.out.println("Space or Enter hit, adding: " + op);
-                    // Push to logs
-                    opLog.push(op);
+                    opLog.push(op); // Push to logs
                     send(op); // To test send to serverLog
-                    // Make current op null again
-                    op = null;
+                    op = null; // Make current op null again
                 }
             }
         });
 
-        // TODO: track where the caret currently is BEFORE the click occurred
+        // TODO: track where the caret currently is BEFORE the click occurred.
+        // TODO: changing cursor position forces an op push
         // Currently just prints where the caret position is when you clicked
         editor.setOnMouseClicked(event -> {
 //            if (op != null) {
@@ -129,14 +121,17 @@ public class EditorController {
         });
 
         editor.setOnKeyPressed(event -> {
+            // KeyPressed are keys that would not be displayed on the TextArea
             // For special keys, e.g. backspace, command, shift, etc.
             // Can use this to introduce shortcuts (e.g. COMMAND+S to save)
             if (event.getCode() == KeyCode.BACK_SPACE) {
                 if (op == null) {
+                    // Create a new operation for deletions
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
                 }
                 if (op.type == Operation.INSERT) {
+                    // If we switched from inserting to deleting
                     opLog.push(op);
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
@@ -146,6 +141,9 @@ public class EditorController {
     }
 
     @FXML
+    /**
+     * Sends an Operation object to the EditorServer
+     */
     public void send(Operation op) {
         Task<Void> task = new Task<Void>() {
             @Override
@@ -163,6 +161,10 @@ public class EditorController {
     }
 
     @FXML
+    // TODO: Remove if we choose to communicate via Operation objects
+    /**
+     * Sends a String message to the EditorServer
+     */
     public void send(String msg) {
         Task<Void> task = new Task<Void>() {
             @Override

@@ -15,20 +15,24 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**
- * Receives string messages from clients and broadcasts them back to clients
+ * The main server backend for the editor and chat applications. The chatting
+ * and editor features listen on separate ports (9000 and 9001 respectively by
+ * default).
  */
-public class ChatServer {
+public class MainServer {
 
+    // To store operations from clients
     private ConcurrentLinkedQueue<Operation> opLog = new ConcurrentLinkedQueue<>();
+    private int chatPort; // Chat server port we are listening on
+    private int editorPort; // Editor server port we are listening on
 
-    private int port;
-
-    public ChatServer(int port) throws Exception {
-        this.port = port;
+    public MainServer(int chatPort, int editorPort) throws Exception {
+        this.chatPort = chatPort;
+        this.editorPort = editorPort;
     }
 
-    public ChatServer() throws Exception {
-        this(9000);
+    public MainServer() throws Exception {
+        this(9000, 9001);
     }
 
     public void run() throws Exception {
@@ -42,15 +46,14 @@ public class ChatServer {
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChatServerInitializer());
-            futures.add(chat.bind(port));
-//            b.bind(port).sync().channel().closeFuture().sync();
+            futures.add(chat.bind(chatPort));
             // Start the editor server
             ServerBootstrap editor = new ServerBootstrap();
             editor.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new EditorServerInitializer(opLog));
-            futures.add(editor.bind(port+1));
+            futures.add(editor.bind(editorPort));
             for (ChannelFuture cf : futures) {
                 cf.sync().channel().closeFuture().sync();
             }
@@ -62,7 +65,7 @@ public class ChatServer {
     }
 
     public static void main(String[] args) throws Exception {
-        ChatServer server = new ChatServer();
+        MainServer server = new MainServer();
         server.run();
     }
 

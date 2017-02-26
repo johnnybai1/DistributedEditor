@@ -12,16 +12,16 @@ import main.MainController;
 
 public class ChatController {
 
-    @FXML VBox chatBox;
-    @FXML TextArea messages;
-    @FXML TextField input;
+    @FXML VBox chatBox; // Container holding the chat section
+    @FXML TextArea messages; // To display chat messages
+    @FXML TextField input; // For user to input messages
 
-    private MainController mainController;
-    private Channel channel;
-    private String alias;
+    private MainController mainController; // To communicate with other controllers
+
+    private Channel channel; // Connection to server
+    private String alias; // Name used to identify the chat participant
 
     public ChatController() {
-
     }
 
     public void setMainController(MainController mainController) {
@@ -38,23 +38,29 @@ public class ChatController {
 
     @FXML
     public void initialize() {
-        messages.setDisable(true);
-        input.setDisable(true);
+        messages.setDisable(true); // Will be enabled upon connect
+        input.setDisable(true); // Will be enabled upon connect
         input.setOnKeyPressed(event -> {
             if (event.getCode() == (KeyCode.ENTER)) {
+                // Send message when user hits "ENTER/RETURN"
                 String msg = input.getText();
-                // Send message
                 send(msg);
                 input.clear();
             }
         });
     }
 
+    /**
+     * Updates the messages TextArea with the specified String.
+     */
     public void updateMessages(String msg) {
         messages.appendText(msg);
     }
 
     @FXML
+    /**
+     * Sends a message to the Server
+     */
     public void send(String msg) {
         Task<Void> task = new Task<Void>() {
 
