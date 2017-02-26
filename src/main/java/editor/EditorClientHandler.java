@@ -4,7 +4,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import javafx.application.Platform;
 
-public class EditorClientHandler extends SimpleChannelInboundHandler<String> {
+public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> {
 
     private EditorController controller;
 
@@ -13,8 +13,8 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<String> {
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        System.err.println("FROM SERVER: " + msg);
+    public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
+        System.err.println("FROM SERVER: " + op);
     }
 
     @Override

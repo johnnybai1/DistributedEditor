@@ -111,7 +111,7 @@ public class EditorController {
                     System.out.println("Space or Enter hit, adding: " + op);
                     // Push to logs
                     opLog.push(op);
-                    send(op.stringToSend()); // To test send to serverLog
+                    send(op); // To test send to serverLog
                     // Make current op null again
                     op = null;
                 }
@@ -143,6 +143,23 @@ public class EditorController {
                 }
             }
         });
+    }
+
+    @FXML
+    public void send(Operation op) {
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                ChannelFuture f = channel.writeAndFlush(op);
+                f.sync();
+                return null;
+            }
+            @Override
+            protected void succeeded() {
+                System.out.println("SENT OPERATION TO SERVER: " + op);
+            }
+        };
+        new Thread(task).start();
     }
 
     @FXML

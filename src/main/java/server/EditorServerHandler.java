@@ -1,5 +1,6 @@
 package server;
 
+import editor.Operation;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -9,13 +10,13 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
-public class EditorServerHandler extends SimpleChannelInboundHandler<String> {
+public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
     final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private ConcurrentLinkedQueue<String> opLog;
+    private ConcurrentLinkedQueue<Operation> opLog;
 
 
-    public EditorServerHandler(ConcurrentLinkedQueue<String> opLog) {
+    public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
         this.opLog = opLog;
     }
 
@@ -26,13 +27,12 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<String> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, String op) {
-        System.err.println("OPERATION RECEIVED: " + op);
-        if (op.equals("PRINT")) {
+    protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
+        if (op.type == Operation.PRINT) {
             System.err.println("=================================");
             System.err.println("Number of operations in log: " + opLog.size());
-            for (String oper : opLog) {
-                System.err.println(oper);
+            for (Operation oper : opLog) {
+                System.err.println(oper.stringToSend());
             }
         }
         else if (opLog.offer(op)) {

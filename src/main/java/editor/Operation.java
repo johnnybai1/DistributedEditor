@@ -1,8 +1,13 @@
 package editor;
 
 
-public class Operation {
+import java.io.Serializable;
 
+public class Operation implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    public static final int PRINT = -1;
     public static final int INSERT = 1;
     public static final int DELETE = 0;
 

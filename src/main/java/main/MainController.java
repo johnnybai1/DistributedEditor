@@ -42,7 +42,7 @@ public class MainController {
 
     @FXML
     public void printServerLog() {
-        editorController.send("PRINT");
+        editorController.send(new Operation(Operation.PRINT));
     }
 
     @FXML

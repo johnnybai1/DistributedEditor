@@ -1,5 +1,6 @@
 package server;
 
+import editor.Operation;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class ChatServer {
 
-    private ConcurrentLinkedQueue<String> opLog = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<Operation> opLog = new ConcurrentLinkedQueue<>();
 
     private int port;
 
