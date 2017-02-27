@@ -17,7 +17,11 @@ import java.net.InetAddress;
  */
 public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
 
-    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+	ChannelGroup channels = null;
+	
+	public ChatServerHandler(ChannelGroup cg) {
+		this.channels = cg;
+	}
 
     @Override
     /**
