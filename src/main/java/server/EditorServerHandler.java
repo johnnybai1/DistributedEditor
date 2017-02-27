@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
-    final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     private ConcurrentLinkedQueue<Operation> opLog;
 
     public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
