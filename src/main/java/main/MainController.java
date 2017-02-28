@@ -57,12 +57,19 @@ public class MainController {
 
     @FXML
     // TODO: Debug tool: selecting apply() will apply some operation to the editor
-    public void apply() {
+    public void applyInsert() {
         Operation op1 = new Operation(Operation.INSERT);
         op1.startPos = 10;
         op1.content = "TESTING AN INSERT";
         editorController.apply(op1);
+    }
 
+    @FXML
+    public void applyDelete() {
+        Operation op = new Operation(Operation.DELETE);
+        op.startPos = 50;
+        op.finalPos = 40;
+        editorController.apply(op);
     }
 
 

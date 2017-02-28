@@ -208,14 +208,25 @@ public class EditorController {
         if (op.type == Operation.INSERT) {
             doInsert(op);
         }
+        if (op.type == Operation.DELETE) {
+            doDelete(op);
+        }
     }
 
     private void doInsert(Operation op) {
-        int currCursorIndex = editor.getCaretPosition();
+        int caret = editor.getCaretPosition();
         int start = op.startPos;
         String content = op.content;
         editor.insertText(start, content);
-        editor.positionCaret(currCursorIndex + content.length());
+        editor.positionCaret(caret + content.length());
+    }
+
+    private void doDelete(Operation op) {
+        int caret = editor.getCaretPosition();
+        int start = op.startPos;
+        int end = op.finalPos;
+        editor.deleteText(end, start);
+        editor.positionCaret(caret - start + end);
     }
 
     /**
