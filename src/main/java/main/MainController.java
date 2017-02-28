@@ -59,9 +59,9 @@ public class MainController {
     // TODO: Debug tool: selecting apply() will apply some operation to the editor
     public void apply() {
         Operation op1 = new Operation(Operation.INSERT);
-//        Operation op2 = new Operation(Operation.DELETE);
+        op1.startPos = 10;
+        op1.content = "TESTING AN INSERT";
         editorController.apply(op1);
-//        editorController.apply(op2);
 
     }
 

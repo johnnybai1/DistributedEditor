@@ -205,7 +205,17 @@ public class EditorController {
      * Updates the editor text area based on the Operation specified.
      */
     public void apply(Operation op) {
+        if (op.type == Operation.INSERT) {
+            doInsert(op);
+        }
+    }
 
+    private void doInsert(Operation op) {
+        int currCursorIndex = editor.getCaretPosition();
+        int start = op.startPos;
+        String content = op.content;
+        editor.insertText(start, content);
+        editor.positionCaret(currCursorIndex + content.length());
     }
 
     /**
