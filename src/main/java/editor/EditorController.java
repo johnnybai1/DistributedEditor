@@ -29,7 +29,7 @@ public class EditorController {
     private Operation op; // current operation we are building
 
     private File editingFile; // current file we are modifying
-    private static final int IDLE_CHECK_TIME = 30;
+    private static final int IDLE_CHECK_TIME = 3;
     
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
