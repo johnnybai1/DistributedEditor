@@ -19,22 +19,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EditorController {
 
     @FXML VBox editorBox; // Container holding the editor TextArea
     @FXML TextArea editor; // To display and edit contents of a text file
 
-    private Stack<Operation> opLog; // Useful for REDO functionality
-    private Operation op; // current operation we are building
-
-    private File editingFile; // current file we are modifying
     private static final int IDLE_CHECK_TIME = 3;
-    
+
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
 
+    // Below are state info required for OT
+    private Stack<Operation> opLog; // Useful for REDO functionality
+    private Operation op; // current operation we are building
+    private int opsGenerated; // How many ops this client generated
+    private int opsReceived; // How many ops this client received
+    ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
+
     public EditorController() {
+        this.opsGenerated = 0;
+        this.opsReceived = 0;
+        outgoing = new ConcurrentLinkedQueue<>();
         opLog = new Stack<>();
         op = null;
     }
@@ -78,6 +85,7 @@ public class EditorController {
     	
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
+
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
             String c = event.getCharacter(); // what we typed
@@ -90,8 +98,8 @@ public class EditorController {
                 }
                 // We had a series of deletes, but now we have an insert
                 if (op.type == Operation.DELETE) {
-                    op.finalPos = editor.getCaretPosition(); // Set final position of caret
                     opLog.push(op); // Push the delete op into logs
+                    send(op);
                     op = new Operation(Operation.INSERT); // Create new Operation for these inserts
                     op.startPos = editor.getCaretPosition(); // Set start position
                 }
@@ -101,7 +109,7 @@ public class EditorController {
                     // Enter, space, or period triggers a push.
                     // Final Position may not be needed for inserts, since we
                     // can simply get op.content.length() for inserts.
-                    op.finalPos = editor.getCaretPosition();
+                    op.finalPos = op.startPos + op.content.length();
                     opLog.push(op); // Push to logs
                     send(op); // To test send to serverLog
                     op = null; // Make current op null again
@@ -109,14 +117,13 @@ public class EditorController {
             }
         });
 
-        // TODO: track where the caret currently is BEFORE the click occurred.
-        // TODO: changing cursor position forces an op push
-        // Currently just prints where the caret position is when you clicked
+        // Pushes an existing op when clicking
         editor.setOnMouseClicked(event -> {
-//            if (op != null) {
-//                opLog.push(op);
-//                op = null;
-//            }
+            if (op != null) {
+                opLog.push(op);
+                send(op);
+                op = null;
+            }
             System.out.println(editor.getCaretPosition());
         });
 
@@ -124,17 +131,24 @@ public class EditorController {
             // KeyPressed are keys that would not be displayed on the TextArea
             // For special keys, e.g. backspace, command, shift, etc.
             // Can use this to introduce shortcuts (e.g. COMMAND+S to save)
-            if (event.getCode() == KeyCode.BACK_SPACE) {
+            if (event.getCode() == KeyCode.BACK_SPACE && editor.getCaretPosition() > 0) {
+                // Backspace pressed, and not at beginning of text
                 if (op == null) {
                     // Create a new operation for deletions
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
+                    op.finalPos = op.startPos;
                 }
                 if (op.type == Operation.INSERT) {
                     // If we switched from inserting to deleting
                     opLog.push(op);
+                    send(op);
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
+                }
+                if (op.type == Operation.DELETE) {
+                    // Decrement our final position for a series of deletions
+                    op.finalPos --;
                 }
             }
         });
@@ -148,6 +162,12 @@ public class EditorController {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
+                // Pack this client's state info into op to send
+                op.opsGenerated = opsGenerated;
+                op.opsReceived = opsReceived;
+                // Increment this client's state info
+                opsGenerated++;
+                opsReceived++;
                 ChannelFuture f = channel.writeAndFlush(op);
                 f.sync();
                 return null;
@@ -187,7 +207,6 @@ public class EditorController {
      * @param file
      */
     public void populateEditor(File file) {
-        this.editingFile = file;
         try {
             BufferedReader br = new BufferedReader(
                     new InputStreamReader(new FileInputStream(file)));

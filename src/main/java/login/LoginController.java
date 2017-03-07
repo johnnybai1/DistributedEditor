@@ -15,6 +15,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import main.MainController;
+import server.MainServer;
 
 import java.io.File;
 
@@ -55,7 +56,7 @@ public class LoginController {
     @FXML
     public void initialize() {
         conField.setText("localhost:9000"); // default
-        fileField.setText("/Users/Johnny/Documents/TEST.txt"); // default
+        fileField.setText("TEST.txt"); // default
         loginBox.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 connect();
@@ -92,10 +93,17 @@ public class LoginController {
             editorChannel = bsEditor.connect(host, port+1).sync().channel();
             mainController.editorController.setChannel(editorChannel);
 
+            // Establish connection to FileServer
+            // TODO: Set up connection to the file server to load/save files
+//            Bootstrap bsFile = new Bootstrap();
+//            bsFile
+//                    .group(fileGroup)
+//                    .channel(NioSocketChannel.class)
+//                    .handler(new FileClientInitializer())
+
             connectPressed.set(true); // Connection established
 
             // Load the specified file if possible
-            // TODO: Check server for file?
             // TODO: If file does not exist on server/locally, create file?
             if (!filePath.isEmpty()) {
                 File f = new File(filePath);
@@ -114,7 +122,8 @@ public class LoginController {
         String[] con = conField.getText().split(":");
         host = con[0];
         port = Integer.parseInt(con[1]);
-        filePath = fileField.getText();
+        // Use server's root as path
+        filePath = MainServer.root + fileField.getText();
     }
 
     public VBox getLoginBox() {

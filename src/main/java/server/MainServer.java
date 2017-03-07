@@ -26,6 +26,10 @@ public class MainServer {
     private int chatPort; // Chat server port we are listening on
     private int editorPort; // Editor server port we are listening on
 
+    public static int version; // Editor server's document version
+
+    public static final String root = "root/";
+
     public MainServer(int chatPort, int editorPort) throws Exception {
         this.chatPort = chatPort;
         this.editorPort = editorPort;
@@ -54,6 +58,9 @@ public class MainServer {
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new EditorServerInitializer(opLog));
             futures.add(editor.bind(editorPort));
+            // TODO: File server to allow clients to access server-side files
+            ServerBootstrap fileServers = new ServerBootstrap();
+
             for (ChannelFuture cf : futures) {
                 cf.sync().channel().closeFuture().sync();
             }

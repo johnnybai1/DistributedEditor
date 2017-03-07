@@ -1,12 +1,14 @@
 package server;
 
 import editor.Operation;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -15,10 +17,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
     static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private ConcurrentLinkedQueue<Operation> opLog;
+    private ConcurrentLinkedQueue<Operation> opLog; // TODO: probably won't need this anymore
+    private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
+
+    private int generatedOps; // How many ops this server generated
+    private int receivedOps; // How many ops this server received
 
     public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
         this.opLog = opLog;
+        this.generatedOps = 0;
+        this.receivedOps = 0;
     }
 
     @Override
@@ -41,9 +49,15 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
             for (Operation oper : opLog) {
                 System.err.println(oper.stringToSend());
             }
-        }
-        else if (opLog.offer(op)) {
-            System.out.println("Successfully offered!");
+        } else {
+            // Send to every client, let client handle the operation
+            for (Channel c : channels) {
+                if (c == ctx.channel()) {
+//                     Don't broadcast to original senders
+                    continue;
+                }
+                c.write(op);
+            }
         }
     }
 
