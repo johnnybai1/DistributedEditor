@@ -24,11 +24,22 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         System.err.println("FROM SERVER: " + op);
         // TODO: Apply the op to editor's text area
         if (controller.op != null) {
-            if (op.type == Operation.INSERT) {
-                controller.op.startPos += op.content.length();
-                controller.send(controller.op);
-                controller.op = null;
-            }
+            controller.send(controller.op);
+            controller.op = null;
+//            if (op.type == Operation.INSERT) {
+//                controller.op.startPos += op.content.length();
+//                controller.send(controller.op);
+//                controller.op = null;
+//            }
+//            if (op.type == Operation.DELETE) {
+//                controller.send(controller.op);
+//                controller.op = null;
+//            }
+//            Operation[] ops = Operation.transform(controller.op, op);
+//            Operation forClient = ops[0];
+//            Operation forServer = ops[1];
+//            controller.op = null;
+//            controller.send(forServer);
         }
         receiveOperation(op);
     }

@@ -161,7 +161,7 @@ public class Operation implements Serializable {
         else if (clientLeft >= serverRight) {
             // xxx[SSS]yyy[CCC]
 //            System.err.println("CASE2");
-            // Shift deletion indices by number of chars serevr deleted
+            // Shift deletion indices by number of chars server deleted
             forServer.startPos -= serverNumDeleted;
             forServer.finalPos -= serverNumDeleted;
         }

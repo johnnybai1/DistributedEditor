@@ -26,7 +26,7 @@ public class EditorController {
     @FXML VBox editorBox; // Container holding the editor TextArea
     @FXML TextArea editor; // To display and edit contents of a text file
 
-    private static final int IDLE_CHECK_TIME = 3;
+    private static final int IDLE_CHECK_TIME = 3; // Timeout to auto push op
 
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
@@ -105,6 +105,8 @@ public class EditorController {
                     op.startPos = editor.getCaretPosition(); // Set start position
                 }
                 op.content += c; // Append characters to track changes
+                send(op);
+                op=null;
                 if (c.equals("\r") || c.equals(" ") ||
                         c.equals(".")) {
                     // Enter, space, or period triggers a push.
@@ -148,6 +150,8 @@ public class EditorController {
                     // Decrement our final position for a series of deletions
                     op.finalPos --;
                 }
+                send(op);
+                op=null;
             }
         });
     }
@@ -238,6 +242,11 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
         String content = op.content;
+        int editorLength = editor.getLength();
+        if (start > editorLength) {
+            int shiftLeft = start - editorLength;
+            start -= shiftLeft;
+        }
         editor.insertText(start, content);
         editor.positionCaret(caret + content.length());
     }
@@ -246,6 +255,12 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
         int end = op.finalPos;
+        int editorLength = editor.getLength();
+        if (start > editorLength) {
+            int shiftLeft = start - editorLength;
+            start -= shiftLeft;
+            end -= shiftLeft;
+        }
         editor.deleteText(end, start);
         editor.positionCaret(caret - start + end);
     }
