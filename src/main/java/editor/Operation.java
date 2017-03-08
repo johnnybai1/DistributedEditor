@@ -137,42 +137,66 @@ public class Operation implements Serializable {
         Operation forClient = new Operation(server); // s', client executes
         Operation forServer = new Operation(client); // c', server executes
 
-        int serverStart = server.startPos;
-        int serverEnd = server.finalPos;
-        int serverNumDeleted = serverStart - serverEnd;
-        int clientStart = client.startPos;
-        int clientEnd = client.finalPos;
-        int clientNumDeleted = clientStart - clientEnd;
+        int serverRight = server.startPos; // Right index for delete
+        int serverLeft = server.finalPos; // Left index for delete
+        int serverNumDeleted = serverRight - serverLeft; // Num chars deleted
+        int clientRight = client.startPos; // Right index for delete
+        int clientLeft = client.finalPos; // Left index for delete
+        int clientNumDeleted = clientRight - clientLeft; // Num chars deleted
 
         // Deletion windows do not intersect
-        if (serverEnd >= clientStart) {
+        if (serverLeft >= clientRight) {
             // xxx[CCC]yyy[SSS]
-            System.err.println("CASE1");
+//            System.err.println("CASE1");
+            // Shift deletion indices by number of chars client deleted
             forClient.startPos -= clientNumDeleted;
             forClient.finalPos -= clientNumDeleted;
-            // cP stays the same
         }
-        else if (clientEnd >= serverStart) {
+        else if (clientLeft >= serverRight) {
             // xxx[SSS]yyy[CCC]
-            System.err.println("CASE2");
+//            System.err.println("CASE2");
+            // Shift deletion indices by number of chars serevr deleted
             forServer.startPos -= serverNumDeleted;
             forServer.finalPos -= serverNumDeleted;
         }
         // Deletion window intersects
-        else if (serverEnd < clientStart) {
-            // Client deleted part of what Server deleted
-            System.err.println("CASE3");
-            int overlap = clientStart - serverEnd;
-            forServer.startPos -= overlap;
-            forClient.startPos -= (overlap + serverNumDeleted);
-            forClient.finalPos -= overlap;
+        else if (serverLeft < clientLeft) {
+            if (serverRight > clientRight) {
+                // Server's deletes covers client's delete
+//                System.err.println("CASE5");
+                int numRight = serverRight - clientRight;
+                int numLeft = clientLeft - serverLeft;
+                forClient.startPos = client.startPos - clientNumDeleted + numRight;
+                forClient.finalPos = client.finalPos - clientNumDeleted + numLeft;
+                forServer = new Operation(Operation.NO_OP);
+            }
+            else {
+                // Client on right, Server on left, partial overlap
+//                System.err.println("CASE3");
+                int overlap = serverRight - clientLeft;
+                forClient.startPos -= overlap;
+                forServer.startPos -= serverNumDeleted;
+                forServer.finalPos -= overlap;
+            }
         }
-        else if (clientEnd < serverStart) {
-            System.err.println("CASE4");
-            int overlap = serverStart - clientEnd;
-            forClient.startPos -= overlap;
-            forServer.startPos -= (overlap + clientNumDeleted);
-            forServer.finalPos -= overlap;
+        else if (clientLeft < serverLeft) {
+            if (clientRight > serverRight) {
+                // Client's deletes covers server's delete
+//                System.err.println("CASE6");
+                int numRight = clientRight - serverRight;
+                int numLeft = serverLeft - clientLeft;
+                forServer.startPos = server.startPos - serverNumDeleted + numRight;
+                forServer.finalPos = server.finalPos - serverNumDeleted + numLeft;
+                forClient = new Operation(Operation.NO_OP);
+            }
+            else {
+                // Server on right, Client on left, partial overlap
+//                System.err.println("CASE4");
+                int overlap = clientRight - serverLeft;
+                forServer.startPos -= overlap;
+                forClient.startPos -= clientNumDeleted;
+                forClient.finalPos -= overlap;
+            }
         }
         ops[0] = forClient;
         ops[1] = forServer;

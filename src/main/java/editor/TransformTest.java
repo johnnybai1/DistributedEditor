@@ -49,7 +49,7 @@ public class TransformTest {
      * @param client: operation performed by client
      * @param server: operation performed by server
      */
-    private static void doTransformApply(String start,
+    private static boolean doTransformApply(String start,
                                          Operation client, Operation server) {
         String clientLocal = apply(start, client);
         String serverLocal = apply(start, server);
@@ -60,6 +60,7 @@ public class TransformTest {
         String serverFinal = apply(serverLocal, forServer);
         if (clientFinal.equals(serverFinal)) {
             System.out.println("Success: " + clientFinal);
+            return true;
         }
         else {
             System.out.println("Failed: " + start);
@@ -71,26 +72,72 @@ public class TransformTest {
             System.out.println("Local server: " + serverLocal);
             System.out.println("From client: " + forServer.stringToSend());
             System.out.println("Final server: " + clientFinal);
+            return false;
         }
     }
 
     private static void testTransformApply() {
-        String start = "ABCDEF";
-        Operation client = new Operation(Operation.INSERT);
-        client.startPos = 3;
-        client.content = "XXX";
-        Operation server = new Operation(Operation.INSERT);
-        server.startPos = 4;
-        server.content = "ZZZ";
-        doTransformApply(start, client, server);
+        testTransformInsert();
+        testTransformDeleteCase1();
+        testTransformDeleteCase2();
+        testTransformDeleteCase3();
+        testTransformDeleteCase4();
+        testTransformDeleteCase5();
+        testTransformDeleteCase6();
+    }
 
-        start = "ABCDEF";
-        client = new Operation(Operation.DELETE);
-        client.startPos = 4;
-        client.finalPos = 3;
-        server = new Operation(Operation.DELETE);
-        server.startPos = 2;
-        server.finalPos = 1;
+    private static void testTransformInsert() {
+        String start = "ABCDEF";
+        Operation client = Operation.insertOperation(3, "XXX");
+        Operation server = Operation.insertOperation(4, "ZZZ");
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase1() {
+        // Case1: Server deletes a chunk entirely past Client
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(3,1);
+        Operation server = Operation.deleteOperation(5,3);
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase2() {
+        // Case2: Client deletes a chunk entirely past Server
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(5,4);
+        Operation server = Operation.deleteOperation(3,1);
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase3() {
+        // Case3: Client delete on the right of Server delete, but overlaps
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(5,3);
+        Operation server = Operation.deleteOperation(4,2);
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase4() {
+        // Case4: Server delete on the right of Client delete, but overlaps
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(4, 2);
+        Operation server = Operation.deleteOperation(5, 3);
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase5() {
+        // Case5: Server delete covers entirety of Client's delete.
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(4, 2);
+        Operation server = Operation.deleteOperation(5,1);
+        doTransformApply(start, client, server);
+    }
+
+    private static void testTransformDeleteCase6() {
+        // Case5: Client delete covers entirety of Server's delete.
+        String start = "ABCDEF";
+        Operation client = Operation.deleteOperation(5, 1);
+        Operation server = Operation.deleteOperation(4,2);
         doTransformApply(start, client, server);
     }
 
