@@ -144,8 +144,13 @@ public class Operation implements Serializable {
         int clientLeft = client.finalPos; // Left index for delete
         int clientNumDeleted = clientRight - clientLeft; // Num chars deleted
 
+        // Both server and client deleted the same frame
+        if (serverLeft == clientLeft && serverRight == clientRight) {
+            forClient = new Operation(Operation.NO_OP);
+            forServer = new Operation(Operation.NO_OP);
+        }
         // Deletion windows do not intersect
-        if (serverLeft >= clientRight) {
+        else if (serverLeft >= clientRight) {
             // xxx[CCC]yyy[SSS]
 //            System.err.println("CASE1");
             // Shift deletion indices by number of chars client deleted
@@ -160,7 +165,7 @@ public class Operation implements Serializable {
             forServer.finalPos -= serverNumDeleted;
         }
         // Deletion window intersects
-        else if (serverLeft < clientLeft) {
+        else if (serverLeft <= clientLeft) {
             if (serverRight > clientRight) {
                 // Server's deletes covers client's delete
 //                System.err.println("CASE5");
@@ -179,7 +184,7 @@ public class Operation implements Serializable {
                 forServer.finalPos -= overlap;
             }
         }
-        else if (clientLeft < serverLeft) {
+        else if (clientLeft <= serverLeft) {
             if (clientRight > serverRight) {
                 // Client's deletes covers server's delete
 //                System.err.println("CASE6");

@@ -99,6 +99,11 @@ public class TransformTest {
         Operation client = Operation.deleteOperation(3,1);
         Operation server = Operation.deleteOperation(5,3);
         doTransformApply(start, client, server);
+
+        start = "123456789";
+        client = Operation.deleteOperation(7,5);
+        server = Operation.deleteOperation(5,0);
+        doTransformApply(start, client, server);
     }
 
     private static void testTransformDeleteCase2() {
@@ -106,6 +111,11 @@ public class TransformTest {
         String start = "ABCDEF";
         Operation client = Operation.deleteOperation(5,4);
         Operation server = Operation.deleteOperation(3,1);
+        doTransformApply(start, client, server);
+
+        start = "123456789";
+        client = Operation.deleteOperation(6,3);
+        server = Operation.deleteOperation(3,1);
         doTransformApply(start, client, server);
     }
 
@@ -115,6 +125,9 @@ public class TransformTest {
         Operation client = Operation.deleteOperation(5,3);
         Operation server = Operation.deleteOperation(4,2);
         doTransformApply(start, client, server);
+
+        start = "123456789";
+        client = Operation.deleteOperation()
     }
 
     private static void testTransformDeleteCase4() {
