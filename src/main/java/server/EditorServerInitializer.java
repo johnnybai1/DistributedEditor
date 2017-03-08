@@ -3,10 +3,13 @@ package server;
 import editor.Operation;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -16,6 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
 
+	ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     private ConcurrentLinkedQueue<Operation> opLog;
 
     public EditorServerInitializer(ConcurrentLinkedQueue<Operation> opLog) {
@@ -31,6 +35,6 @@ public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(
                 ClassLoader.getSystemClassLoader())));
         pipeline.addLast(new ObjectEncoder());
-        pipeline.addLast("ot logic", new EditorServerHandler(opLog));
+        pipeline.addLast("ot logic", new EditorServerHandler(channels, opLog));
     }
 }

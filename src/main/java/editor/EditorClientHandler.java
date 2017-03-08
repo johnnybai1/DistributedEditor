@@ -23,7 +23,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
         // TODO: Apply the op to editor's text area
-
+   
     }
 
     /**

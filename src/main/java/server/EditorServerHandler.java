@@ -16,14 +16,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
-    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    static ChannelGroup channels = null;
     private ConcurrentLinkedQueue<Operation> opLog; // TODO: probably won't need this anymore
     private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     private int generatedOps; // How many ops this server generated
     private int receivedOps; // How many ops this server received
 
-    public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
+    public EditorServerHandler(ChannelGroup cg, ConcurrentLinkedQueue<Operation> opLog) {
+    	this.channels = cg;
         this.opLog = opLog;
         this.generatedOps = 0;
         this.receivedOps = 0;
