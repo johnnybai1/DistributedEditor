@@ -56,7 +56,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         } else {
             System.out.println("RECEIVED: " + op.stringToSend());
             opLog.add(op);
-
             // Send to every client, let client handle the operation
             for (Channel c : channels) {
                 if (c == ctx.channel()) {

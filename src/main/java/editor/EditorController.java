@@ -33,7 +33,7 @@ public class EditorController {
 
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
-    private Operation op; // current operation we are building
+    Operation op; // current operation we are building
     int opsGenerated; // How many ops this client generated
     int opsReceived; // How many ops this client received
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
@@ -58,7 +58,7 @@ public class EditorController {
 	@FXML
     public void initialize() {    	
     	
-    	// Timer to check if user is idle, runs every 30 seconds
+    	// Timer to check if user is idle, runs every IDLE_CHECK_TIME seconds
 		Timeline idleCheck = new Timeline(new KeyFrame(Duration.seconds(IDLE_CHECK_TIME), new EventHandler<ActionEvent>() {
 			Operation previousOp = op; // what previous operation was IDLE_CHECK_TIME seconds ago
     	    @Override
@@ -142,6 +142,7 @@ public class EditorController {
                     send(op);
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
+                    op.finalPos = op.startPos;
                 }
                 if (op.type == Operation.DELETE) {
                     // Decrement our final position for a series of deletions
@@ -175,7 +176,7 @@ public class EditorController {
             }
             @Override
             protected void succeeded() {
-//                System.out.println("SENT OPERATION TO SERVER: " + op);
+                System.out.println("SENT OPERATION TO SERVER: " + op);
             }
         };
         new Thread(task).start();
