@@ -127,7 +127,6 @@ public class TransformTest {
         doTransformApply(start, client, server);
 
         start = "123456789";
-        client = Operation.deleteOperation()
     }
 
     private static void testTransformDeleteCase4() {
