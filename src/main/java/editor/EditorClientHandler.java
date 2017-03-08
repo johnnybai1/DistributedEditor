@@ -23,7 +23,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
         // TODO: Apply the op to editor's text area
-
+        receiveOperation(op);
     }
 
     /**
@@ -32,17 +32,27 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      */
     private void receiveOperation(Operation rcvdOp) {
         ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
-        for (Operation localOp : outgoing) {
-            if (localOp.opsGenerated < rcvdOp.opsReceived) {
-                if (outgoing.remove(localOp)) {
-                    System.out.println("Removed: " + localOp.stringToSend());
+        if (!outgoing.isEmpty()) {
+            for (Operation localOp : outgoing) {
+                if (localOp.opsGenerated < rcvdOp.opsReceived) {
+                    if (outgoing.remove(localOp)) {
+                        System.out.println("Removed: " + localOp.stringToSend());
+                    }
                 }
             }
+//        Operation[] transformedOutgoing = new Operation[outgoing.size()];
+            for (int i = 0; i < outgoing.size(); i++) {
+                Operation client = new Operation(outgoing.remove()); // Copy the op
+                Operation[] transformed = Operation.transform(client, rcvdOp);
+                Operation forClient = transformed[0];
+                Operation forServer = transformed[1];
+                outgoing.add(forClient);
+                rcvdOp = forServer;
+            }
         }
-        for (int i = 0; i < outgoing.size(); i++) {
-            // Transform received Op with Ops in outgoing queue
-
-        }
+        controller.apply(rcvdOp);
+        System.out.println("Applying: " + rcvdOp.stringToSend());
+        controller.opsReceived += 1;
     }
 
     @Override

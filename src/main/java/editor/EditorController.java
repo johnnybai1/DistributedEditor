@@ -34,8 +34,8 @@ public class EditorController {
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
     private Operation op; // current operation we are building
-    private int opsGenerated; // How many ops this client generated
-    private int opsReceived; // How many ops this client received
+    int opsGenerated; // How many ops this client generated
+    int opsReceived; // How many ops this client received
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     public EditorController() {
@@ -73,6 +73,8 @@ public class EditorController {
                         System.out.println("User is idle, adding: " + op);
                         // Push to logs
                         opLog.push(op);
+                        // Send to server
+                        send(op);
                         // Make current op null again
                         op = null;    	    		
                     }
@@ -98,8 +100,7 @@ public class EditorController {
                 }
                 // We had a series of deletes, but now we have an insert
                 if (op.type == Operation.DELETE) {
-                    opLog.push(op); // Push the delete op into logs
-                    send(op);
+                    send(op); // Send to server
                     op = new Operation(Operation.INSERT); // Create new Operation for these inserts
                     op.startPos = editor.getCaretPosition(); // Set start position
                 }
@@ -109,9 +110,7 @@ public class EditorController {
                     // Enter, space, or period triggers a push.
                     // Final Position may not be needed for inserts, since we
                     // can simply get op.content.length() for inserts.
-                    op.finalPos = op.startPos + op.content.length();
-                    opLog.push(op); // Push to logs
-                    send(op); // To test send to serverLog
+                    send(op); // Send to server
                     op = null; // Make current op null again
                 }
             }
@@ -120,7 +119,6 @@ public class EditorController {
         // Pushes an existing op when clicking
         editor.setOnMouseClicked(event -> {
             if (op != null) {
-                opLog.push(op);
                 send(op);
                 op = null;
             }
@@ -141,7 +139,6 @@ public class EditorController {
                 }
                 if (op.type == Operation.INSERT) {
                     // If we switched from inserting to deleting
-                    opLog.push(op);
                     send(op);
                     op = new Operation(Operation.DELETE);
                     op.startPos = editor.getCaretPosition();
@@ -162,19 +159,23 @@ public class EditorController {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                // Pack this client's state info into op to send
+                // Pack this client's state info into op
                 op.opsGenerated = opsGenerated;
                 op.opsReceived = opsReceived;
+                // Send the op
+                ChannelFuture f = channel.writeAndFlush(op);
+                // Append to queue
+                outgoing.add(op);
+                // Add to opLog
+                opLog.push(op);
                 // Increment this client's state info
                 opsGenerated++;
-                opsReceived++;
-                ChannelFuture f = channel.writeAndFlush(op);
                 f.sync();
                 return null;
             }
             @Override
             protected void succeeded() {
-                System.out.println("SENT OPERATION TO SERVER: " + op);
+//                System.out.println("SENT OPERATION TO SERVER: " + op);
             }
         };
         new Thread(task).start();

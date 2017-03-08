@@ -12,21 +12,26 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Defines how the Editor Server handles incoming Operation objects
+ * Defines how the Editor Server handles incoming Operation objects. The main
+ * role of this server is to simply pass along operations to other clients.
  */
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
-    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+//    static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    ChannelGroup channels = null;
     private ConcurrentLinkedQueue<Operation> opLog; // TODO: probably won't need this anymore
-    private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
+    // TODO: Might not need the below if we use this server as message passer
+    private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
     private int generatedOps; // How many ops this server generated
     private int receivedOps; // How many ops this server received
 
-    public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog) {
+    public EditorServerHandler(ConcurrentLinkedQueue<Operation> opLog,
+                               ChannelGroup cg) {
         this.opLog = opLog;
         this.generatedOps = 0;
         this.receivedOps = 0;
+        this.channels = cg;
     }
 
     @Override
@@ -35,8 +40,8 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
      */
     public void channelActive(final ChannelHandlerContext ctx) {
         channels.add(ctx.channel());
-        ctx.writeAndFlush("Welcome to the editing\r\n");
     }
+
 
     @Override
     /**
@@ -50,13 +55,20 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
                 System.err.println(oper.stringToSend());
             }
         } else {
+            System.out.println("RECEIVED: " + op.stringToSend());
+            opLog.add(op);
+
             // Send to every client, let client handle the operation
             for (Channel c : channels) {
                 if (c == ctx.channel()) {
-//                     Don't broadcast to original senders
+                    // Let sender know we processed this message
+                    // TODO: not sure if this is actually needed. Placeholder.
+//                    Operation ack = new Operation(op);
+//                    ack.type += Operation.ACK;
+//                    c.writeAndFlush(ack);
                     continue;
                 }
-                c.write(op);
+                c.writeAndFlush(op);
             }
         }
     }
