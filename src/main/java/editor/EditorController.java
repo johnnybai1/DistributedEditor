@@ -265,9 +265,5 @@ public class EditorController {
     public TextArea getEditor() {
         return editor;
     }
-
-
-
-
 }
 
