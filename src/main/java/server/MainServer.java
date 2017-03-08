@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**
- * The main server backend for the editor and chat applications. The chatting
- * and editor features listen on separate ports (9000 and 9001 respectively by
- * default).
+ * The main server backend for the editor, chat, and file storage applications. The chatting, 
+ * editor, and file storage features listen on separate ports (9000, 9001, and 9002
+ * respectively by default).
  */
 public class MainServer {
 
@@ -25,18 +25,20 @@ public class MainServer {
     private ConcurrentLinkedQueue<Operation> opLog = new ConcurrentLinkedQueue<>();
     private int chatPort; // Chat server port we are listening on
     private int editorPort; // Editor server port we are listening on
+    private int filePort; // File server port we are listening on
 
     public static int version; // Editor server's document version
 
     public static final String root = "root/";
 
-    public MainServer(int chatPort, int editorPort) throws Exception {
+    public MainServer(int chatPort, int editorPort, int filePort) throws Exception {
         this.chatPort = chatPort;
         this.editorPort = editorPort;
+        this.filePort = filePort;
     }
 
     public MainServer() throws Exception {
-        this(9000, 9001);
+        this(9000, 9001, 9002);
     }
 
     public void run() throws Exception {
@@ -58,9 +60,14 @@ public class MainServer {
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new EditorServerInitializer(opLog));
             futures.add(editor.bind(editorPort));
-            // TODO: File server to allow clients to access server-side files
-            ServerBootstrap fileServers = new ServerBootstrap();
-
+            // Start the file server
+            ServerBootstrap fileServer = new ServerBootstrap();
+            fileServer.group(bossGroup, workerGroup)
+            		.channel(NioServerSocketChannel.class)
+            		.handler(new LoggingHandler(LogLevel.INFO))
+            		.childHandler(new FileServerInitializer());
+            futures.add(fileServer.bind(filePort));
+            
             for (ChannelFuture cf : futures) {
                 cf.sync().channel().closeFuture().sync();
             }
