@@ -264,7 +264,7 @@ public class EditorController {
         int start = op.startPos;
         String content = op.content;
         editor.insertText(start, content);
-        editor.positionCaret(caret);
+        editor.positionCaret(caret + 1);
     }
 
     private void doDelete(Operation op) {

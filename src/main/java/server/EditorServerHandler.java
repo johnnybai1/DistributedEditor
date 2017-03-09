@@ -73,27 +73,31 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
      * @return an Operation to be sent to clients
      */
     private Operation receiveOperation(Operation rcvdOp) {
+        Operation fromClient = new Operation(rcvdOp);
+        // Discard acknowledged messages
         if (!outgoing.isEmpty()) {
             for (Operation localOp : outgoing) {
-                if (localOp.opsGenerated < rcvdOp.opsReceived) {
+                if (localOp.opsGenerated < fromClient.opsReceived) {
                     if (outgoing.remove(localOp)) {
                         System.out.println("Removed: " + localOp);
                     }
                 }
             }
             for (int i = 0; i < outgoing.size(); i++) {
-                Operation server = new Operation(outgoing.remove()); // Copy the op
-                Operation[] transformed = Operation.transform(rcvdOp, server);
-                Operation forClient = transformed[1];
-                Operation forServer = transformed[0];
-                outgoing.add(forServer);
-                forClient.opsReceived = opsReceived;
-                rcvdOp = forClient;
+                // Transform incoming op with ones in outgoing queue
+                Operation S = new Operation(outgoing.remove()); // Copy the op
+                Operation[] transformed = Operation.transform(fromClient, S);
+                Operation cPrime = transformed[0];
+                Operation sPrime = transformed[1];
+                cPrime.opsReceived = opsReceived;
+                fromClient = cPrime;
+                outgoing.add(sPrime);
             }
         }
-        System.out.println("Applying: " + rcvdOp);
+        outgoing.add(fromClient);
+        System.out.println("Applying: " + fromClient);
         opsReceived += 1;
-        return rcvdOp;
+        return fromClient;
     }
 
     @Override

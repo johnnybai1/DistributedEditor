@@ -22,25 +22,6 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      */
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
-        // TODO: Apply the op to editor's text area
-//        if (controller.op != null) {
-//            controller.send(controller.op);
-//            controller.op = null;
-//            if (op.type == Operation.INSERT) {
-//                controller.op.startPos += op.content.length();
-//                controller.send(controller.op);
-//                controller.op = null;
-//            }
-//            if (op.type == Operation.DELETE) {
-//                controller.send(controller.op);
-//                controller.op = null;
-//            }
-//            Operation[] ops = Operation.transform(controller.op, op);
-//            Operation forClient = ops[0];
-//            Operation forServer = ops[1];
-//            controller.op = null;
-//            controller.send(forServer);
-//        }
         receiveOperation(op);
     }
 
@@ -49,27 +30,29 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      * @param rcvdOp: Operation received from the server
      */
     private void receiveOperation(Operation rcvdOp) {
+        Operation fromServer = new Operation(rcvdOp);
         ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
+        // Discard acknowledged operations
         if (!outgoing.isEmpty()) {
             for (Operation localOp : outgoing) {
-                if (localOp.opsGenerated < rcvdOp.opsReceived) {
+                if (localOp.opsGenerated < fromServer.opsReceived) {
                     if (outgoing.remove(localOp)) {
                         System.out.println("Removed: " + localOp);
                     }
                 }
             }
-//        Operation[] transformedOutgoing = new Operation[outgoing.size()];
             for (int i = 0; i < outgoing.size(); i++) {
-                Operation client = new Operation(outgoing.remove()); // Copy the op
-                Operation[] transformed = Operation.transform(client, rcvdOp);
-                Operation forClient = transformed[0];
-                Operation forServer = transformed[1];
-                outgoing.add(forServer);
-                rcvdOp = forClient;
+                // Transform incoming op with ones in outgoing queue
+                Operation C = new Operation(outgoing.remove()); // Copy the op
+                Operation[] transformed = Operation.transform(C, fromServer);
+                Operation cPrime = transformed[0];
+                Operation sPrime = transformed[1];
+                fromServer = sPrime;
+                outgoing.add(cPrime);
             }
         }
-        controller.apply(rcvdOp);
-        System.out.println("Applying: " + rcvdOp);
+        controller.apply(fromServer);
+        System.out.println("Applying: " + fromServer);
         controller.opsReceived += 1;
     }
 
