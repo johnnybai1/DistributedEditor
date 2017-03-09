@@ -14,14 +14,15 @@ public class TestOTAlgorithm {
         Client clientB = new Client("Client B");
         Server server = new Server();
 
+        // ClientA and ClientB each generate an operation to insert
         Operation one = Operation.insertOperation(0, "A");
         Operation two = Operation.insertOperation(0, "B");
         clientA.generate(one);
         clientB.generate(two);
-
         System.out.println(clientA);
         System.out.println(clientB);
 
+        // Suppose server receives operation from clientA first
         Operation first = server.receive(one);
         clientB.receive(first);
         System.out.println(clientB);
@@ -29,6 +30,16 @@ public class TestOTAlgorithm {
         Operation second = server.receive(two);
         clientA.receive(second);
         System.out.println(clientA);
+
+        Operation three = Operation.insertOperation(2, "X");
+        clientA.generate(three);
+
+        Operation third = server.receive(three);
+        clientB.receive(third);
+
+        System.out.println(clientA);
+        System.out.println(clientB);
+
 
     }
 
@@ -97,29 +108,31 @@ class Server {
         out = new ConcurrentLinkedQueue<>();
     }
 
-    public Operation receive(Operation op) {
+    // Server receives an operation from the client
+    public Operation receive(Operation C) {
+        Operation fromClient = new Operation(C);
         // Discard acknowledged messages
         if (!out.isEmpty()) {
             for (Operation o : out) {
-                if (o.opsGenerated < op.opsReceived) {
+                if (o.opsGenerated < fromClient.opsReceived) {
                     out.remove(o);
                 }
             }
         }
         for (int i = 0; i < out.size(); i++) {
             // Transform incoming op with ones in outgoing queue
-            Operation server = new Operation(out.remove());
-            Operation[] ops = Operation.transform(op, server);
-            Operation forClient = ops[0]; // transformed SERVER op
-            Operation forServer = ops[1]; // transformed CLIENT op
-            forServer.opsReceived = opsRcv;
-            op = forServer;
-            out.add(forClient);
+            Operation S = new Operation(out.remove());
+            Operation[] ops = Operation.transform(fromClient, S);
+            Operation cPrime = ops[0]; // transformed CLIENT op
+            Operation sPrime = ops[1]; // transformed SERVER op
+            cPrime.opsReceived = opsRcv;
+            fromClient = cPrime;
+            out.add(sPrime);
         }
-        out.add(op);
-        text = TestOTAlgorithm.apply(text, op);
+        out.add(fromClient);
+        text = TestOTAlgorithm.apply(text, fromClient);
         opsRcv += 1;
-        return op;
+        return fromClient;
     }
 
     @Override
@@ -157,27 +170,28 @@ class Client {
         return op;
     }
 
-    public Operation receive(Operation op) {
+    public Operation receive(Operation S) {
+        Operation fromServer = new Operation(S);
         // Discard acknowledged messages
         if (!out.isEmpty()) {
             for (Operation o : out) {
-                if (o.opsGenerated < op.opsReceived) {
+                if (o.opsGenerated < fromServer.opsReceived) {
                     out.remove(o);
                 }
             }
         }
         for (int i = 0; i < out.size(); i++) {
             // Transform incoming op with ones in outgoing queue
-            Operation client = out.remove();
-            Operation[] ops = Operation.transform(client, op);
-            Operation forClient = ops[0]; // transformed SERVER op
-            Operation forServer = ops[1]; // transformed CLIENT op
-            op = forClient;
-            out.add(forServer);
+            Operation C = new Operation(out.remove());
+            Operation[] ops = Operation.transform(C, fromServer);
+            Operation cPrime = ops[0]; // transformed CLIENT op
+            Operation sPrime = ops[1]; // transformed SERVER op
+            fromServer = sPrime;
+            out.add(cPrime);
         }
-        text = TestOTAlgorithm.apply(text, op);
+        text = TestOTAlgorithm.apply(text, fromServer);
         opsRcv += 1;
-        return op;
+        return fromServer;
     }
 
     @Override

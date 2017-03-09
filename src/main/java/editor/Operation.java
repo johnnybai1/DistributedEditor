@@ -90,125 +90,132 @@ public class Operation implements Serializable {
         this.opsReceived = opsReceived;
     }
 
-    public static Operation[] transform(Operation client, Operation server) {
+    public static Operation[] transform(Operation A, Operation B) {
         Operation[] ops = new Operation[2];
-        if (client.type == INSERT && server.type == INSERT) {
-            return transformInsert(client, server);
+        if (A.type == INSERT && B.type == INSERT) {
+            return transformInsert(A, B);
         }
-        if (client.type == DELETE && server.type == DELETE) {
-            return transformDelete(client, server);
+        if (A.type == DELETE && B.type == DELETE) {
+            return transformDelete(A, B);
         }
-        if (client.type == INSERT && server.type == DELETE) {
-            return transformInsertDelete(client, server);
+        if (A.type == INSERT && B.type == DELETE) {
+            return transformInsertDelete(A, B);
         }
-        if (client.type == DELETE && server.type == INSERT) {
-            return transformDeleteInsert(client, server);
+        if (A.type == DELETE && B.type == INSERT) {
+            return transformDeleteInsert(A, B);
         }
         return ops;
     }
 
     /**
-     * Client and server both inserted something
+     * Transforms two insert operations against each other
+     * @param C is the client's operation
+     * @param S is the server's operation
      */
-    public static Operation[] transformInsert(Operation client, Operation server) {
+    public static Operation[] transformInsert(Operation C, Operation S) {
         Operation[] ops = new Operation[2];
-        int clientIndex = client.startPos;
-        int serverIndex = server.startPos;
-        Operation forClient = new Operation(server); // For server to execute
-        Operation forServer = new Operation(client); // For client to execute
+        int idxC = C.startPos;
+        int idxS = S.startPos;
+        Operation cPrime = new Operation(C); // to be executed by S
+        Operation sPrime = new Operation(S); // to be executed by C
 
-        // Server inserted something after what our client inserted
-        if (serverIndex > clientIndex) {
-            // Increment insertion point of Server's content by 1
-            forClient.startPos += 1;
+        // S inserts at a position after C's insert
+        if (idxS > idxC) {
+            // C must insert S's operation at a later position
+            sPrime.startPos += 1;
         }
-        // Server inserted something before what our client inserted
-        if (serverIndex < clientIndex) {
-            // Increment insertion point of Server's content by 1
-            forServer.startPos += 1;
+        // S inserts at a position before C's insert
+        if (idxS < idxC) {
+            // S must insert C's operation at a later position
+            cPrime.startPos += 1;
         }
-        // Server and Client attempted to insert something at the same spot
-        if (serverIndex == clientIndex) {
-            // Server wins!
-            forServer.startPos += 1;
+        // C inserts at the same position as S's insert
+        if (idxC == idxS) {
+            // Let S win, S must insert C's operation at a later position
+            cPrime.startPos += 1;
         }
-        ops[0] = forClient;
-        ops[1] = forServer;
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 
     /**
-     * Client and server both deleted something
+     * Transforms two deletions against each other.
+     * @param C is the client's operation.
+     * @param S is the server's operation.
      */
-    public static Operation[] transformDelete(Operation client, Operation server) {
+    public static Operation[] transformDelete(Operation C, Operation S) {
         Operation[] ops = new Operation[2];
-        int clientIndex = client.startPos;
-        int serverIndex = server.startPos;
-        Operation forClient = new Operation(server);
-        Operation forServer = new Operation(client);
-        // Server deleted at a later position than where client deleted
-        if (serverIndex > clientIndex) {
-            forClient.startPos -= 1;
+        int idxC = C.startPos;
+        int idxS = S.startPos;
+        Operation cPrime = new Operation(C); // to be executed by C
+        Operation sPrime = new Operation(S); // to be executed by S
+        // S deleted at a position after C's deletion
+        if (idxS > idxC) {
+            sPrime.startPos -= 1;
         }
-        if (serverIndex < clientIndex) {
-            forServer.startPos -= 1;
+        // S deleted at a position before C's deletion
+        if (idxS < idxC) {
+            cPrime.startPos -= 1;
         }
-        if (serverIndex == clientIndex) {
-            forClient.type = Operation.NO_OP;
-            forServer.type = Operation.NO_OP;
+        // S and C deleted at the same position
+        if (idxS == idxC) {
+            cPrime.type = Operation.NO_OP;
+            sPrime.type = Operation.NO_OP;
         }
-        ops[0] = forClient;
-        ops[1] = forServer;
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 
     /**
      * Client made an insertion, server made a deletion.
      */
-    public static Operation[] transformInsertDelete(Operation client, Operation server) {
+    public static Operation[] transformInsertDelete(Operation C, Operation S) {
         Operation[] ops = new Operation[2];
-        int clientIndex = client.startPos;
-        int serverIndex = server.startPos;
-        Operation forClient = new Operation(server);
-        Operation forServer = new Operation(client);
-        if (serverIndex > clientIndex) {
-            // Server deletes at a later position than client insertion
-            forClient.startPos += 1;
+        int idxC = C.startPos;
+        int idxS = S.startPos;
+        Operation cPrime = new Operation(C);
+        Operation sPrime = new Operation(S);
+        // S deletes at a position after C's insertion
+        if (idxS > idxC) {
+            sPrime.startPos += 1;
         }
-        if (serverIndex < clientIndex) {
-            // Server deletes at an earlier position than client insertion
-            forServer.startPos -= 1;
+        // S deletes at a position before C's insertion
+        if (idxS < idxC) {
+            cPrime.startPos -= 1;
         }
-        if (serverIndex == clientIndex) {
-            forServer.startPos -= 1;
+        // S deletes at the same position of C's insertion
+        if (idxS == idxC) {
+            cPrime.startPos -= 1;
         }
-        ops[0] = forClient;
-        ops[1] = forServer;
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 
     /**
      * Client made a deletion, server made an insertion.
      */
-    public static Operation[] transformDeleteInsert(Operation client, Operation server) {
+    public static Operation[] transformDeleteInsert(Operation C, Operation S) {
         Operation[] ops = new Operation[2];
-        int clientIndex = client.startPos;
-        int serverIndex = server.startPos;
-        Operation forClient = new Operation(server);
-        Operation forServer = new Operation(client);
-        if (serverIndex > clientIndex) {
+        int idxC = C.startPos;
+        int idxS = S.startPos;
+        Operation cPrime = new Operation(C);
+        Operation sPrime = new Operation(S);
+        if (idxS > idxC) {
             // Server inserts at a later position than client deletion
-            forClient.startPos -= 1;
+            sPrime.startPos -= 1;
         }
-        if (serverIndex < clientIndex) {
+        if (idxS < idxC) {
             // Server inserts at an earlier position than client deletion
-            forServer.startPos += 1;
+            cPrime.startPos += 1;
         }
-        if (serverIndex == clientIndex) {
-            forClient.startPos -= 1;
+        if (idxS == idxC) {
+            sPrime.startPos -= 1;
         }
-        ops[0] = forClient;
-        ops[1] = forServer;
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 

@@ -37,10 +37,10 @@ public class TransformTest {
         String clientLocal = apply(s, client); // What client sees
         String serverLocal = apply(s, server); // What server sees
         Operation[] ops = Operation.transform(client, server);
-        Operation forClient = ops[0]; // transformed server op
-        Operation forServer = ops[1]; // transformed client op
-        String clientFinal = apply(clientLocal, forClient);
-        String serverFinal = apply(serverLocal, forServer);
+        Operation cPrime = ops[0]; // transformed client op
+        Operation sPrime = ops[1]; // transformed server op
+        String clientFinal = apply(clientLocal, sPrime);
+        String serverFinal = apply(serverLocal, cPrime);
         if (clientFinal.equals(serverFinal)) {
             System.out.println("Success!");
             return true;
@@ -50,8 +50,8 @@ public class TransformTest {
             System.out.println("Started with: " + s);
             System.out.println("Server applied " + server + ": " + serverLocal);
             System.out.println("Client applied " + client + ": " + clientLocal);
-            System.out.println("ServerOp transformed into: " + forClient);
-            System.out.println("ClientOp transformed into: " + forServer);
+            System.out.println("ServerOp transformed into: " + sPrime);
+            System.out.println("ClientOp transformed into: " + cPrime);
             System.out.println("Server final: " + serverFinal);
             System.out.println("Client final: " + clientFinal);
             return false;
