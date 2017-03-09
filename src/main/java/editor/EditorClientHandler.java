@@ -30,6 +30,10 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      * @param rcvdOp: Operation received from the server
      */
     private void receiveOperation(Operation rcvdOp) {
+        if (rcvdOp.type == Operation.ACK) {
+            controller.opsReceived += 1;
+            return;
+        }
         Operation fromServer = new Operation(rcvdOp);
         ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
         // Discard acknowledged operations
