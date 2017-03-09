@@ -86,17 +86,85 @@ public class Operation implements Serializable {
     }
 
     /**
+     * Client and server both inserted something
+     */
+    public static Operation[] transformInsert(Operation client, Operation server) {
+        Operation[] ops = new Operation[2];
+        int clientIndex = client.startPos;
+        int serverIndex = client.finalPos;
+        Operation forClient = new Operation(server); // For server to execute
+        Operation forServer = new Operation(client); // For client to execute
+
+        // Server inserted something after what our client inserted
+        if (serverIndex > clientIndex) {
+            // Increment insertion point of Server's content by 1
+            forClient.startPos += 1;
+        }
+        // Server inserted something before what our client inserted
+        if (serverIndex < clientIndex) {
+            // Increment insertion point of Server's content by 1
+            forServer.startPos += 1;
+        }
+        // Server and Client attempted to insert something at the same spot
+        if (serverIndex == clientIndex) {
+
+        }
+        ops[0] = forClient;
+        ops[1] = forServer;
+        return ops;
+    }
+
+    /**
+     * Client and server both deleted something
+     */
+    public static Operation[] transformDelete(Operation client, Operation server) {
+        Operation[] ops = new Operation[2];
+        int clientIndex = client.startPos;
+        int serverIndex = server.startPos;
+        Operation forClient = new Operation(server);
+        Operation forServer = new Operation(client);
+        // Server deleted at a later position than where client deleted
+        if (serverIndex > clientIndex) {
+            forClient.startPos -= 1;
+        }
+        if (serverIndex < clientIndex) {
+            forServer.startPos -= 1;
+        }
+        if (serverIndex == clientIndex) {
+            forClient.type = Operation.NO_OP;
+            forServer.type = Operation.NO_OP;
+        }
+        ops[0] = forClient;
+        ops[1] = forServer;
+        return ops;
+    }
+
+    /**
+     * Client made an insertion, server made a deletion.
+     */
+    public static Operation[] transformInsertDelete(Operation client, Operation server) {
+
+    }
+
+    /**
+     * Client made a deletion, server made an insertion.
+     */
+    public static Operation[] transformDeleteInsert(Operation client, Operation server) {
+
+    }
+
+    /**
      * Transforms client operation against server operation.  Server operation
      * takes precedence. This means we always transform our operations under the
      * assumption that the server operation is applied first.
      */
-    public static Operation[] transform(Operation client, Operation server) {
+    public static Operation[] transformBatch(Operation client, Operation server) {
         Operation[] ops = new Operation[2];
         if (client.type == INSERT && server.type == INSERT) {
-            return transformInserts(client, server);
+            return transformBatchedInserts(client, server);
         }
         if (client.type == DELETE && server.type == DELETE) {
-            return transformDeletes(client, server);
+            return transformBatchedDeletes(client, server);
         }
         return ops;
     }
@@ -105,7 +173,7 @@ public class Operation implements Serializable {
      * Transforms two insert operations. Returns two operations, one the client
      * should apply and one the server should apply to reach a consistent state.
      */
-    private static Operation[] transformInserts(Operation client, Operation server) {
+    private static Operation[] transformBatchedInserts(Operation client, Operation server) {
         Operation[] ops = new Operation[2]; // [c'][s']
         // Transformed operation for client to execute
         Operation forClient = new Operation(server); // s'
@@ -133,7 +201,7 @@ public class Operation implements Serializable {
     /**
      * Transforms two delete operations.
      */
-    private static Operation[] transformDeletes(Operation client, Operation server) {
+    private static Operation[] transformBatchedDeletes(Operation client, Operation server) {
         Operation[] ops = new Operation[2];
         Operation forClient = new Operation(server); // s', client executes
         Operation forServer = new Operation(client); // c', server executes
@@ -258,5 +326,15 @@ public class Operation implements Serializable {
         return sb.toString();
     }
 
-
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Operation) {
+            Operation other = (Operation) obj;
+            return opsGenerated == other.opsGenerated &&
+                    opsReceived == other.opsReceived &&
+                    type == other.type && startPos == other.startPos &&
+                    finalPos == other.finalPos && content.equals(other.content);
+        }
+        return false;
+    }
 }

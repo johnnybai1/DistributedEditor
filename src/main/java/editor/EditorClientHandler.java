@@ -23,9 +23,9 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
         // TODO: Apply the op to editor's text area
-        if (controller.op != null) {
-            controller.send(controller.op);
-            controller.op = null;
+//        if (controller.op != null) {
+//            controller.send(controller.op);
+//            controller.op = null;
 //            if (op.type == Operation.INSERT) {
 //                controller.op.startPos += op.content.length();
 //                controller.send(controller.op);
@@ -40,7 +40,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
 //            Operation forServer = ops[1];
 //            controller.op = null;
 //            controller.send(forServer);
-        }
+//        }
         receiveOperation(op);
     }
 

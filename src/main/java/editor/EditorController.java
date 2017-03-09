@@ -54,9 +54,46 @@ public class EditorController {
         this.channel = channel;
     }
 
+
+    @SuppressWarnings("restriction")
+    @FXML
+    /**
+     * Each key stroke is a single operation
+     */
+    public void initialize() {
+        editor.setWrapText(true); // Will be enabled upon connect
+        editor.setDisable(true); // Will be enabled upon connect
+
+        editor.setOnKeyTyped(event -> {
+            // KeyTyped refers to keys pressed that can be displayed in the TextArea
+            String c = event.getCharacter(); // what we typed
+            op = new Operation(Operation.INSERT); // insert operation
+            op.startPos = editor.getCaretPosition(); // start = cursor pos
+            op.content = c; // content is what we typed
+            send(op);
+            op = null;
+        });
+
+        editor.setOnKeyPressed(event -> {
+            // KeyPressed are keys that would not be displayed on the TextArea
+            // For special keys, e.g. backspace, command, shift, etc.
+            // Can use this to introduce shortcuts (e.g. COMMAND+S to save)
+            if (event.getCode() == KeyCode.BACK_SPACE && editor.getCaretPosition() > 0) {
+                // Backspace pressed, and not at beginning of text
+                op = new Operation(Operation.DELETE);
+                op.startPos = editor.getCaretPosition();
+                send(op);
+                op = null;
+            }
+        });
+    }
+
     @SuppressWarnings("restriction")
 	@FXML
-    public void initialize() {    	
+    /**
+     * If we want to batch multiple key strokes into a single operation
+     */
+    public void initializeBatchedVersion() {
     	
     	// Timer to check if user is idle, runs every IDLE_CHECK_TIME seconds
 		Timeline idleCheck = new Timeline(new KeyFrame(Duration.seconds(IDLE_CHECK_TIME), new EventHandler<ActionEvent>() {
@@ -88,6 +125,11 @@ public class EditorController {
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
 
+        // Prints out caret position when clicking
+        editor.setOnMouseClicked(event -> {
+            System.out.println(editor.getCaretPosition());
+        });
+
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
             String c = event.getCharacter(); // what we typed
@@ -105,8 +147,6 @@ public class EditorController {
                     op.startPos = editor.getCaretPosition(); // Set start position
                 }
                 op.content += c; // Append characters to track changes
-                send(op);
-                op=null;
                 if (c.equals("\r") || c.equals(" ") ||
                         c.equals(".")) {
                     // Enter, space, or period triggers a push.
@@ -150,8 +190,6 @@ public class EditorController {
                     // Decrement our final position for a series of deletions
                     op.finalPos --;
                 }
-                send(op);
-                op=null;
             }
         });
     }
@@ -186,27 +224,6 @@ public class EditorController {
         new Thread(task).start();
     }
 
-    @FXML
-    // TODO: Remove if we choose to communicate via Operation objects
-    /**
-     * Sends a String message to the EditorServer
-     */
-    public void send(String msg) {
-        Task<Void> task = new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-                ChannelFuture f = channel.writeAndFlush(msg + "\r\n");
-                f.sync();
-                return null;
-            }
-            @Override
-            protected void succeeded() {
-                System.out.println("SENT OPERATION TO SERVER: " + msg);
-            }
-        };
-        new Thread(task).start();
-    }
-
     /**
      * Intended to be called by the LoginController. User specifies a file to
      * populate the editor (TextArea) with.
@@ -226,8 +243,10 @@ public class EditorController {
         }
     }
 
+
     /**
-     * Updates the editor text area based on the Operation specified.
+     * Updates the editor text area based on operations with single character
+     * changes
      */
     public void apply(Operation op) {
         if (op.type == Operation.INSERT) {
@@ -242,25 +261,45 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
         String content = op.content;
-        int editorLength = editor.getLength();
-        if (start > editorLength) {
-            int shiftLeft = start - editorLength;
-            start -= shiftLeft;
+        editor.deleteText(start, start-1);
+        if (start <= caret) {
+            // Deleted prior to our caret position
+            editor.positionCaret(caret - 1);
         }
-        editor.insertText(start, content);
-        editor.positionCaret(caret + content.length());
     }
 
     private void doDelete(Operation op) {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
-        int end = op.finalPos;
-        int editorLength = editor.getLength();
-        if (start > editorLength) {
-            int shiftLeft = start - editorLength;
-            start -= shiftLeft;
-            end -= shiftLeft;
+        String content = op.content;
+        editor.insertText(start, content);
+        editor.positionCaret(caret);
+    }
+
+    /**
+     * Updates the editor text area based on the Operation specified.
+     */
+    public void applyBatched(Operation op) {
+        if (op.type == Operation.INSERT) {
+            doBatchedInsert(op);
         }
+        if (op.type == Operation.DELETE) {
+            doBatchedDelete(op);
+        }
+    }
+
+    private void doBatchedInsert(Operation op) {
+        int caret = editor.getCaretPosition();
+        int start = op.startPos;
+        String content = op.content;
+        editor.insertText(start, content);
+        editor.positionCaret(caret + content.length());
+    }
+
+    private void doBatchedDelete(Operation op) {
+        int caret = editor.getCaretPosition();
+        int start = op.startPos;
+        int end = op.finalPos;
         editor.deleteText(end, start);
         editor.positionCaret(caret - start + end);
     }

@@ -64,7 +64,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
 //                    Operation ack = new Operation(op);
 //                    ack.type += Operation.ACK;
 //                    c.writeAndFlush(ack);
-                    continue;
+//                    continue;
                 }
                 c.writeAndFlush(op);
             }
