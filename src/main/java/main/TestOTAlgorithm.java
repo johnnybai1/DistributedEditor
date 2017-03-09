@@ -15,8 +15,10 @@ public class TestOTAlgorithm {
         Client clientA = new Client("Client A");
         Client clientB = new Client("Client B");
         Server server = new Server();
+
         Operation one = Operation.insertOperation(0, "a");
         Operation two = Operation.insertOperation(1, "b");
+
         clientA.generate(one);
 
         Operation first = server.receive(one);
@@ -33,34 +35,34 @@ public class TestOTAlgorithm {
         System.out.println(clientB);
 
         // ClientA and ClientB each generate an operation to insert
-//        Operation one = Operation.insertOperation(0, "A");
-//        Operation two = Operation.insertOperation(0, "B");
-//        clientA.generate(one);
-//        clientB.generate(two);
-//        System.out.println(clientA);
-//        System.out.println(clientB);
-//
-//
-//
-//        // Suppose server receives operation from clientA first
-//        Operation first = server.receive(one);
-//        clientA.receive(ack);
-//        clientB.receive(first);
-//        System.out.println(clientB);
-//
-//        Operation second = server.receive(two);
-//        clientA.receive(second);
-//        clientB.receive(ack);
-//        System.out.println(clientA);
-//
-//        Operation three = Operation.insertOperation(2, "X");
-//        clientA.generate(three);
-//
-//        Operation third = server.receive(three);
-//        clientB.receive(third);
-//
-//        System.out.println(clientA);
-//        System.out.println(clientB);
+        one = Operation.insertOperation(0, "A");
+        two = Operation.insertOperation(0, "B");
+        clientA.generate(one);
+        clientB.generate(two);
+        System.out.println(clientA);
+        System.out.println(clientB);
+
+
+
+        // Suppose server receives operation from clientA first
+        first = server.receive(one);
+        clientA.receive(ack);
+        clientB.receive(first);
+        System.out.println(clientB);
+
+        second = server.receive(two);
+        clientA.receive(second);
+        clientB.receive(ack);
+        System.out.println(clientA);
+
+        Operation three = Operation.insertOperation(2, "X");
+        clientA.generate(three);
+
+        Operation third = server.receive(three);
+        clientB.receive(third);
+
+        System.out.println(clientA);
+        System.out.println(clientB);
 
 
     }
@@ -132,11 +134,13 @@ class Server {
 
     // Server receives an operation from the client
     public Operation receive(Operation C) {
+        System.out.println("Server received " + C);
         Operation fromClient = new Operation(C);
         // Discard acknowledged messages
         if (!out.isEmpty()) {
             for (Operation o : out) {
                 if (o.opsGenerated < fromClient.opsReceived) {
+                    System.out.println("Server removed " + o);
                     out.remove(o);
                 }
             }
@@ -193,6 +197,7 @@ class Client {
     }
 
     public Operation receive(Operation S) {
+        System.out.println(name + " received " + S);
         if (S.type == Operation.ACK) {
             opsRcv += 1;
             return S;
@@ -203,6 +208,7 @@ class Client {
             for (Operation o : out) {
                 if (o.opsGenerated < fromServer.opsReceived) {
                     out.remove(o);
+                    System.out.println(name + " removed" + o);
                 }
             }
         }

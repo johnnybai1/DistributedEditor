@@ -361,22 +361,24 @@ public class Operation implements Serializable {
             character = "CARRIAGE RETURN";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("[");
+        sb.append("[(");
+        sb.append(opsGenerated);
+        sb.append(",");
+        sb.append(opsReceived);
+        sb.append(") ");
         if (type == INSERT) {
             sb.append("INS ");
         }
         if (type == DELETE) {
             sb.append("DEL ");
         }
+        if (type == ACK) {
+            sb.append("ACK]");
+            return sb.toString();
+        }
         sb.append(startPos);
-        sb.append(":");
-        sb.append(finalPos);
         sb.append(" ");
         sb.append(character);
-        sb.append(" ");
-        sb.append(" (");
-        sb.append(content.length());
-        sb.append(")");
         sb.append("]");
         return sb.toString();
     }
