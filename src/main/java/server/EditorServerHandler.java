@@ -47,7 +47,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     /**
      * Called when an Operation object arrives in the channel.
      */
-    protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
+    protected synchronized void channelRead0(ChannelHandlerContext ctx, Operation op) {
         if (op.type == Operation.PRINT) {
             System.err.println("=================================");
             System.err.println("Number of operations in log: " + opLog.size());
@@ -74,7 +74,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
      * @param rcvdOp: Operation received from the client.
      * @return an Operation to be sent to clients
      */
-    private Operation receiveOperation(Operation rcvdOp) {
+    private synchronized Operation receiveOperation(Operation rcvdOp) {
         Operation fromClient = new Operation(rcvdOp);
         // Discard acknowledged messages
         if (!outgoing.isEmpty()) {
@@ -92,8 +92,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
             Operation[] transformed = Operation.transform(fromClient, S);
             Operation cPrime = transformed[0];
             Operation sPrime = transformed[1];
-            System.out.println("cPrime: " + cPrime);
-            System.out.println("sPrime: " + sPrime);
             cPrime.opsReceived = opsReceived;
             fromClient = cPrime;
             outgoing.add(sPrime);

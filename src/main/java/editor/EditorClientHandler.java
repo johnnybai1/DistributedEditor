@@ -57,7 +57,6 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
             outgoing.add(cPrime);
         }
         controller.apply(fromServer);
-        controller.send(fromServer);
         System.out.println("Applying: " + fromServer);
         controller.opsReceived += 1;
     }
