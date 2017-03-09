@@ -71,6 +71,11 @@ public class Operation implements Serializable {
         return op;
     }
 
+    public static Operation deleteOperation(int startPos) {
+        return deleteOperation(startPos, startPos-1);
+    }
+
+
     /**
      * The Ops generated field will be set during transmission.
      */
@@ -108,7 +113,7 @@ public class Operation implements Serializable {
     public static Operation[] transformInsert(Operation client, Operation server) {
         Operation[] ops = new Operation[2];
         int clientIndex = client.startPos;
-        int serverIndex = client.finalPos;
+        int serverIndex = server.startPos;
         Operation forClient = new Operation(server); // For server to execute
         Operation forServer = new Operation(client); // For client to execute
 
