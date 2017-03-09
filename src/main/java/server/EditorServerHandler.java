@@ -60,8 +60,8 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
             Operation toClients = receiveOperation(op);
             for (Channel c : channels) {
                 if (c == ctx.channel()) {
-                    c.writeAndFlush(new Operation(Operation.ACK));
-                    continue;
+//                    c.writeAndFlush(new Operation(Operation.ACK));
+//                    continue;
                 }
                 c.writeAndFlush(toClients);
             }
