@@ -64,13 +64,13 @@ public class TransformTest {
         }
         else {
             System.out.println("Failed: " + start);
-            System.out.println("Client applied: " + client.stringToSend());
+            System.out.println("Client applied: " + client);
             System.out.println("Local client: " + clientLocal);
-            System.out.println("From server: " + forClient.stringToSend());
+            System.out.println("From server: " + forClient);
             System.out.println("Final client: " + clientFinal);
-            System.out.println("Server applied: " + server.stringToSend());
+            System.out.println("Server applied: " + server);
             System.out.println("Local server: " + serverLocal);
-            System.out.println("From client: " + forServer.stringToSend());
+            System.out.println("From client: " + forServer);
             System.out.println("Final server: " + clientFinal);
             return false;
         }

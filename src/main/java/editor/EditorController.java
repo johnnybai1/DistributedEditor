@@ -67,11 +67,13 @@ public class EditorController {
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
             String c = event.getCharacter(); // what we typed
-            op = new Operation(Operation.INSERT); // insert operation
-            op.startPos = editor.getCaretPosition(); // start = cursor pos
-            op.content = c; // content is what we typed
-            send(op);
-            op = null;
+            if (!c.isEmpty()) {
+                op = new Operation(Operation.INSERT); // insert operation
+                op.startPos = editor.getCaretPosition(); // start = cursor pos
+                op.content = c; // content is what we typed
+                send(op);
+                op = null;
+            }
         });
 
         editor.setOnKeyPressed(event -> {
@@ -261,19 +263,18 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
         String content = op.content;
-        editor.deleteText(start, start-1);
-        if (start <= caret) {
-            // Deleted prior to our caret position
-            editor.positionCaret(caret - 1);
-        }
+        editor.insertText(start, content);
+        editor.positionCaret(caret);
     }
 
     private void doDelete(Operation op) {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
-        String content = op.content;
-        editor.insertText(start, content);
-        editor.positionCaret(caret);
+        editor.deleteText(start-1, start);
+        if (start <= caret) {
+            // Deleted prior to our caret position
+            editor.positionCaret(caret - 1);
+        }
     }
 
     /**

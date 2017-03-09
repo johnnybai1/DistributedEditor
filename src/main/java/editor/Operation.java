@@ -85,6 +85,17 @@ public class Operation implements Serializable {
         this.opsReceived = opsReceived;
     }
 
+    public static Operation[] transform(Operation client, Operation server) {
+        Operation[] ops = new Operation[2];
+        if (client.type == INSERT && server.type == INSERT) {
+            return transformInsert(client, server);
+        }
+        if (client.type == DELETE && server.type == DELETE) {
+            return transformDelete(client, server);
+        }
+        return ops;
+    }
+
     /**
      * Client and server both inserted something
      */
@@ -107,7 +118,8 @@ public class Operation implements Serializable {
         }
         // Server and Client attempted to insert something at the same spot
         if (serverIndex == clientIndex) {
-
+            // Server wins!
+            forServer.startPos += 1;
         }
         ops[0] = forClient;
         ops[1] = forServer;
@@ -143,14 +155,16 @@ public class Operation implements Serializable {
      * Client made an insertion, server made a deletion.
      */
     public static Operation[] transformInsertDelete(Operation client, Operation server) {
-
+        Operation[] ops = new Operation[2];
+        return ops;
     }
 
     /**
      * Client made a deletion, server made an insertion.
      */
     public static Operation[] transformDeleteInsert(Operation client, Operation server) {
-
+        Operation[] ops = new Operation[2];
+        return ops;
     }
 
     /**
@@ -277,28 +291,6 @@ public class Operation implements Serializable {
         return ops;
     }
 
-    // TODO: May not need this method if we send the object directly
-    /**
-     * String representation of an Operation, understood by the Server
-     */
-    public String stringToSend() {
-        StringBuilder sb = new StringBuilder();
-        if (type == INSERT) {
-            sb.append("INS ");
-        }
-        if (type == DELETE) {
-            sb.append("DEL ");
-        }
-        sb.append(startPos);
-        sb.append(":");
-        sb.append(finalPos);
-        sb.append(" ");
-        sb.append(content);
-        sb.append(" ");
-        sb.append(content.length());
-        return sb.toString();
-    }
-
     @Override
     /**
      * String representation of an Operation. We call .trim() on the content
@@ -306,6 +298,16 @@ public class Operation implements Serializable {
      * parse instructions to use for applying an Operation to a text file.
      */
     public String toString() {
+        String character = content;
+        if (character.equals("\r")) {
+            character = "RETURN";
+        }
+        if (character.equals("\n")) {
+            character = "NEWLINE";
+        }
+        if (character.equals("\r\n")) {
+            character = "CARRIAGE RETURN";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         if (type == INSERT) {
@@ -318,7 +320,8 @@ public class Operation implements Serializable {
         sb.append(":");
         sb.append(finalPos);
         sb.append(" ");
-        sb.append(content.trim());
+        sb.append(character);
+        sb.append(" ");
         sb.append(" (");
         sb.append(content.length());
         sb.append(")");

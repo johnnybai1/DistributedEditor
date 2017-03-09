@@ -54,7 +54,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
             for (Operation localOp : outgoing) {
                 if (localOp.opsGenerated < rcvdOp.opsReceived) {
                     if (outgoing.remove(localOp)) {
-                        System.out.println("Removed: " + localOp.stringToSend());
+                        System.out.println("Removed: " + localOp);
                     }
                 }
             }
@@ -69,7 +69,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
             }
         }
         controller.apply(rcvdOp);
-        System.out.println("Applying: " + rcvdOp.stringToSend());
+        System.out.println("Applying: " + rcvdOp);
         controller.opsReceived += 1;
     }
 
