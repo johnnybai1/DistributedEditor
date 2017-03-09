@@ -20,7 +20,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     static ChannelGroup channels = null;
     private ConcurrentLinkedQueue<Operation> opLog; // TODO: probably won't need this anymore
 
-    private int state;
     // TODO: Might not need the below if we use this server as message passer
     private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
@@ -32,7 +31,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         this.opLog = opLog;
         this.opsGenerated = 0;
         this.opsReceived = 0;
-        this.state = 0;
+        outgoing = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -58,21 +57,12 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         } else {
             System.out.println("RECEIVED: " + op);
             opLog.add(op);
-            // Set incoming operation's received state to server's state
-            op.opsReceived = state;
-            // Increment server's state
-            state += 1;
-            // Send to every client, let client handle the operation
+            Operation toClients = receiveOperation(op);
             for (Channel c : channels) {
                 if (c == ctx.channel()) {
-                    // Let sender know we processed this message
-                    // TODO: not sure if this is actually needed. Placeholder.
-//                    Operation ack = new Operation(op);
-//                    ack.type += Operation.ACK;
-//                    c.writeAndFlush(ack);
                     continue;
                 }
-                c.writeAndFlush(op);
+                c.writeAndFlush(toClients);
             }
         }
     }
@@ -80,7 +70,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     /**
      * Called when this server receives an operation from a client.
      * @param rcvdOp: Operation received from the client.
-     * @return: an Operation to be sent to clients
+     * @return an Operation to be sent to clients
      */
     private Operation receiveOperation(Operation rcvdOp) {
         if (!outgoing.isEmpty()) {
@@ -91,13 +81,13 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
                     }
                 }
             }
-//        Operation[] transformedOutgoing = new Operation[outgoing.size()];
             for (int i = 0; i < outgoing.size(); i++) {
                 Operation server = new Operation(outgoing.remove()); // Copy the op
                 Operation[] transformed = Operation.transform(rcvdOp, server);
                 Operation forClient = transformed[1];
                 Operation forServer = transformed[0];
                 outgoing.add(forServer);
+                forClient.opsReceived = opsReceived;
                 rcvdOp = forClient;
             }
         }
@@ -111,7 +101,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         cause.printStackTrace();
         ctx.close();
     }
-
 
 
 }

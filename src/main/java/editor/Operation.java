@@ -93,6 +93,12 @@ public class Operation implements Serializable {
         if (client.type == DELETE && server.type == DELETE) {
             return transformDelete(client, server);
         }
+        if (client.type == INSERT && server.type == DELETE) {
+            return transformInsertDelete(client, server);
+        }
+        if (client.type == DELETE && server.type == INSERT) {
+            return transformDeleteInsert(client, server);
+        }
         return ops;
     }
 
@@ -156,6 +162,23 @@ public class Operation implements Serializable {
      */
     public static Operation[] transformInsertDelete(Operation client, Operation server) {
         Operation[] ops = new Operation[2];
+        int clientIndex = client.startPos;
+        int serverIndex = server.startPos;
+        Operation forClient = new Operation(server);
+        Operation forServer = new Operation(client);
+        if (serverIndex > clientIndex) {
+            // Server deletes at a later position than client insertion
+            forClient.startPos += 1;
+        }
+        if (serverIndex < clientIndex) {
+            // Server deletes at an earlier position than client insertion
+            forServer.startPos -= 1;
+        }
+        if (serverIndex == clientIndex) {
+            forServer.startPos -= 1;
+        }
+        ops[0] = forClient;
+        ops[1] = forServer;
         return ops;
     }
 
@@ -164,6 +187,23 @@ public class Operation implements Serializable {
      */
     public static Operation[] transformDeleteInsert(Operation client, Operation server) {
         Operation[] ops = new Operation[2];
+        int clientIndex = client.startPos;
+        int serverIndex = server.startPos;
+        Operation forClient = new Operation(server);
+        Operation forServer = new Operation(client);
+        if (serverIndex > clientIndex) {
+            // Server inserts at a later position than client deletion
+            forClient.startPos -= 1;
+        }
+        if (serverIndex < clientIndex) {
+            // Server inserts at an earlier position than client deletion
+            forServer.startPos += 1;
+        }
+        if (serverIndex == clientIndex) {
+            forClient.startPos -= 1;
+        }
+        ops[0] = forClient;
+        ops[1] = forServer;
         return ops;
     }
 
