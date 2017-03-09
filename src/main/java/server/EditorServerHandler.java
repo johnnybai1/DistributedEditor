@@ -27,7 +27,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     private int opsReceived; // How many ops this server received
 
     public EditorServerHandler(ChannelGroup cg, ConcurrentLinkedQueue<Operation> opLog) {
-    	this.channels = cg;
+        this.channels = cg;
         this.opLog = opLog;
         this.opsGenerated = 0;
         this.opsReceived = 0;
@@ -70,6 +70,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
 
     /**
      * Called when this server receives an operation from a client.
+     *
      * @param rcvdOp: Operation received from the client.
      * @return an Operation to be sent to clients
      */
@@ -84,17 +85,18 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
                     }
                 }
             }
-            int outSize = outgoing.size();
-            for (int i = 0; i < outSize; i++) {
-                // Transform incoming op with ones in outgoing queue
-                Operation S = new Operation(outgoing.remove()); // Copy the op
-                Operation[] transformed = Operation.transform(fromClient, S);
-                Operation cPrime = transformed[0];
-                Operation sPrime = transformed[1];
-                cPrime.opsReceived = Math.max(opsReceived, outSize);
-                fromClient = cPrime;
-                outgoing.add(sPrime);
-            }
+        }
+        for (int i = 0; i < outgoing.size(); i++) {
+            // Transform incoming op with ones in outgoing queue
+            Operation S = new Operation(outgoing.remove()); // Copy the op
+            Operation[] transformed = Operation.transform(fromClient, S);
+            Operation cPrime = transformed[0];
+            Operation sPrime = transformed[1];
+            System.out.println("cPrime: " + cPrime);
+            System.out.println("sPrime: " + sPrime);
+            cPrime.opsReceived = opsReceived;
+            fromClient = cPrime;
+            outgoing.add(sPrime);
         }
         outgoing.add(fromClient);
         System.out.println("Applying: " + fromClient);
