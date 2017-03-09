@@ -275,6 +275,9 @@ public class EditorController {
             start = length;
             caret = length;
         }
+        if (start - 1 == 0) {
+            return;
+        }
         editor.deleteText(start-1, start);
         if (start <= caret) {
             // Deleted prior to our caret position
