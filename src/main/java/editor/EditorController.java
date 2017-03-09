@@ -270,6 +270,11 @@ public class EditorController {
     private void doDelete(Operation op) {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
+        int length = editor.getLength();
+        if (start > length) {
+            start = length;
+            caret = length;
+        }
         editor.deleteText(start-1, start);
         if (start <= caret) {
             // Deleted prior to our caret position

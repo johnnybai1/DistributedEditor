@@ -84,13 +84,14 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
                     }
                 }
             }
-            for (int i = 0; i < outgoing.size(); i++) {
+            int outSize = outgoing.size();
+            for (int i = 0; i < outSize; i++) {
                 // Transform incoming op with ones in outgoing queue
                 Operation S = new Operation(outgoing.remove()); // Copy the op
                 Operation[] transformed = Operation.transform(fromClient, S);
                 Operation cPrime = transformed[0];
                 Operation sPrime = transformed[1];
-                cPrime.opsReceived = opsReceived;
+                cPrime.opsReceived = Math.max(opsReceived, outSize);
                 fromClient = cPrime;
                 outgoing.add(sPrime);
             }
