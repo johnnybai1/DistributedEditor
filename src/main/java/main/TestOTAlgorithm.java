@@ -98,30 +98,30 @@ class Server {
     public Operation receive(Operation C) {
         Operation fromClient = new Operation(C);
         // Discard acknowledged messages
-        if (!out.isEmpty()) {
-            for (Operation o : out) {
-                if (o.opsGenerated < fromClient.opsReceived) {
-                    out.remove(o);
-                }
-            }
-        }
-        if (opsRcv > fromClient.opsGenerated + fromClient.opsReceived) {
-            if (opsRcv > fromClient.opsReceived) {
-                for (int i = 0; i < out.size(); i++) {
-                    // Transform incoming op with ones in outgoing queue
-                    Operation S = new Operation(out.remove());
-                    Operation[] ops = Operation.transform(fromClient, S);
-                    Operation cPrime = ops[0]; // transformed CLIENT op
-                    Operation sPrime = ops[1]; // transformed SERVER op
-                    cPrime.opsReceived = opsRcv;
-
-                    fromClient = cPrime;
-                    out.add(sPrime);
-                }
-            }
-        }
-        out.add(fromClient);
-        text = TestOTAlgorithm.apply(text, fromClient);
+//        if (!out.isEmpty()) {
+//            for (Operation o : out) {
+//                if (o.opsGenerated < fromClient.opsReceived) {
+//                    out.remove(o);
+//                }
+//            }
+//        }
+//        if (opsRcv > fromClient.opsGenerated + fromClient.opsReceived) {
+//            if (opsRcv > fromClient.opsReceived) {
+//                for (int i = 0; i < out.size(); i++) {
+//                     Transform incoming op with ones in outgoing queue
+//                    Operation S = new Operation(out.remove());
+//                    Operation[] ops = Operation.transform(fromClient, S);
+//                    Operation cPrime = ops[0]; // transformed CLIENT op
+//                    Operation sPrime = ops[1]; // transformed SERVER op
+//                    cPrime.opsReceived = opsRcv;
+//
+//                    fromClient = cPrime;
+//                    out.add(sPrime);
+//                }
+//            }
+//        }
+//        out.add(fromClient);
+//        text = TestOTAlgorithm.apply(text, fromClient);
         opsRcv += 1;
         return fromClient;
     }
@@ -134,7 +134,10 @@ class Server {
 
 class Client {
 
+    static int numConnected = 0;
+
     public String name;
+    public int id;
     public String text;
     public int opsGen;
     public int opsRcv;
@@ -146,12 +149,15 @@ class Client {
         opsGen = 0;
         opsRcv = 0;
         out = new ConcurrentLinkedQueue<>();
+        this.id = numConnected + 1;
+        numConnected += 1;
     }
 
     public Operation generate(Operation op) {
         // 1. Apply operation locally
         text = TestOTAlgorithm.apply(text, op);
         // 2. Update operation with state info
+        op.clientId = id;
         op.opsGenerated = opsGen;
         op.opsReceived = opsRcv;
         // 3. Add op to outgoing queue
@@ -171,12 +177,25 @@ class Client {
                 }
             }
         }
+        Operation[] ops;
+        Operation cPrime;
+        Operation sPrime;
         for (int i = 0; i < out.size(); i++) {
             // Transform incoming op with ones in outgoing queue
             Operation C = new Operation(out.remove());
-            Operation[] ops = Operation.transform(C, fromServer);
-            Operation cPrime = ops[0]; // transformed CLIENT op
-            Operation sPrime = ops[1]; // transformed SERVER op
+            if (C.opsGenerated == fromServer.opsGenerated &&
+                    C.opsReceived == fromServer.opsReceived &&
+                    C.clientId < fromServer.clientId) {
+                // our Id is lower, we have priority!
+                ops = Operation.transform(fromServer, C);
+                cPrime = ops[1];
+                sPrime = ops[0];
+            }
+            else {
+                ops = Operation.transform(C, fromServer);
+                cPrime = ops[0]; // transformed CLIENT op
+                sPrime = ops[1]; // transformed SERVER op
+            }
             fromServer = sPrime;
             out.add(cPrime);
         }
@@ -187,7 +206,7 @@ class Client {
 
     @Override
     public String toString() {
-        return "[" + name + " (" + opsGen + "," + opsRcv + ") " + text + "]";
+        return "[" + id + " " + name + " (" + opsGen + "," + opsRcv + ") " + text + "]";
     }
 
 }
