@@ -27,6 +27,8 @@ public class EditorController {
     @FXML TextArea editor; // To display and edit contents of a text file
 
     private static final int IDLE_CHECK_TIME = 3; // Timeout to auto push op
+    
+    private static int clientId = 0; // Id of Client
 
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
@@ -63,6 +65,7 @@ public class EditorController {
     public void initialize() {
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
+        clientId++;  // every client increases clientId
 
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
@@ -204,6 +207,8 @@ public class EditorController {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
+            	// Set clientId into op
+            	op.clientId = clientId;
                 // Pack this client's state info into op
                 op.opsGenerated = opsGenerated;
                 op.opsReceived = opsReceived;

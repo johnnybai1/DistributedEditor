@@ -24,6 +24,7 @@ public class Operation implements Serializable {
     public int startPos; // Position where we started editing
     public int finalPos; // Position where we finished editing
     public String content; // Applies only to INSERT ops
+    public int clientId; // id of client that sent operation
 
     public Operation(int type) {
         this.type = type;
@@ -31,12 +32,13 @@ public class Operation implements Serializable {
     }
 
     public Operation(int opsGenerated, int opsReceived, int type, int startPos,
-                     int finalPos) {
+                     int finalPos, int clientId) {
         this.opsGenerated = opsGenerated;
         this.opsReceived = opsReceived;
         this.type = type;
         this.startPos = startPos;
         this.finalPos = finalPos;
+        this.clientId = clientId;
     }
 
     /**
@@ -49,6 +51,7 @@ public class Operation implements Serializable {
         this.startPos = copy.startPos;
         this.finalPos = copy.finalPos;
         this.content = copy.content;
+        this.clientId = copy.clientId;
     }
 
     /**
@@ -390,7 +393,8 @@ public class Operation implements Serializable {
             return opsGenerated == other.opsGenerated &&
                     opsReceived == other.opsReceived &&
                     type == other.type && startPos == other.startPos &&
-                    finalPos == other.finalPos && content.equals(other.content);
+                    finalPos == other.finalPos && content.equals(other.content) && 
+                    clientId == other.clientId;
         }
         return false;
     }
