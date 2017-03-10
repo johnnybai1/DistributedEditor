@@ -14,11 +14,22 @@ public class TestOTAlgorithm {
         Client clientB = new Client("Client B");
         Server server = new Server();
 
-        // ClientA and ClientB each generate an operation to insert
+        Operation a = Operation.insertOperation(0, "a");
+        Operation b = Operation.insertOperation(1, "b");
+        a = clientA.generate(a);
+        Operation toSend = server.receive(a);
+        clientB.receive(toSend);
+        b = clientA.generate(b);
+        toSend = server.receive(b);
+        clientB.receive(toSend);
+        System.out.println(clientA);
+        System.out.println(clientB);
+
+//         ClientA and ClientB each generate an operation to insert
         Operation one = Operation.insertOperation(0, "A");
         Operation two = Operation.insertOperation(0, "B");
-        clientA.generate(one);
-        clientB.generate(two);
+        one = clientA.generate(one);
+        two = clientB.generate(two);
         System.out.println(clientA);
         System.out.println(clientB);
 
@@ -32,7 +43,7 @@ public class TestOTAlgorithm {
         System.out.println(clientA);
 
         Operation three = Operation.insertOperation(2, "X");
-        clientA.generate(three);
+        three = clientA.generate(three);
 
         Operation third = server.receive(three);
         clientB.receive(third);
@@ -64,37 +75,12 @@ public class TestOTAlgorithm {
         int idx = op.startPos;
         String left = "";
         if (idx > 0) {
-            left = s.substring(0, idx-1);
+            left = s.substring(0, idx - 1);
         }
         String right = s.substring(idx);
         return left + right;
     }
 
-    static boolean doTransformApply(String s,
-                                            Operation client, Operation server) {
-        String clientLocal = apply(s, client); // What client sees
-        String serverLocal = apply(s, server); // What server sees
-        Operation[] ops = Operation.transform(client, server);
-        Operation forClient = ops[0]; // transformed server op
-        Operation forServer = ops[1]; // transformed client op
-        String clientFinal = apply(clientLocal, forClient);
-        String serverFinal = apply(serverLocal, forServer);
-        if (clientFinal.equals(serverFinal)) {
-            System.out.println("Success!");
-            return true;
-        }
-        else {
-            System.out.println("Failed!");
-            System.out.println("Started with: " + s);
-            System.out.println("Server applied " + server + ": " + serverLocal);
-            System.out.println("Client applied " + client + ": " + clientLocal);
-            System.out.println("ServerOp transformed into: " + forClient);
-            System.out.println("ClientOp transformed into: " + forServer);
-            System.out.println("Server final: " + serverFinal);
-            System.out.println("Client final: " + clientFinal);
-            return false;
-        }
-    }
 }
 
 class Server {
@@ -119,15 +105,20 @@ class Server {
                 }
             }
         }
-        for (int i = 0; i < out.size(); i++) {
-            // Transform incoming op with ones in outgoing queue
-            Operation S = new Operation(out.remove());
-            Operation[] ops = Operation.transform(fromClient, S);
-            Operation cPrime = ops[0]; // transformed CLIENT op
-            Operation sPrime = ops[1]; // transformed SERVER op
-            cPrime.opsReceived = opsRcv;
-            fromClient = cPrime;
-            out.add(sPrime);
+        if (opsRcv > fromClient.opsGenerated + fromClient.opsReceived) {
+            if (opsRcv > fromClient.opsReceived) {
+                for (int i = 0; i < out.size(); i++) {
+                    // Transform incoming op with ones in outgoing queue
+                    Operation S = new Operation(out.remove());
+                    Operation[] ops = Operation.transform(fromClient, S);
+                    Operation cPrime = ops[0]; // transformed CLIENT op
+                    Operation sPrime = ops[1]; // transformed SERVER op
+                    cPrime.opsReceived = opsRcv;
+
+                    fromClient = cPrime;
+                    out.add(sPrime);
+                }
+            }
         }
         out.add(fromClient);
         text = TestOTAlgorithm.apply(text, fromClient);
