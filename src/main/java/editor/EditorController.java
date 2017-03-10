@@ -28,7 +28,7 @@ public class EditorController {
 
     private static final int IDLE_CHECK_TIME = 3; // Timeout to auto push op
     
-    private static int clientId = 0; // Id of Client
+    private static int clientCounter = 0; // Keeps track of how many clients
 
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
@@ -38,6 +38,7 @@ public class EditorController {
     Operation op; // current operation we are building
     int opsGenerated; // How many ops this client generated
     int opsReceived; // How many ops this client received
+    int clientId; // Id of client
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     public EditorController() {
@@ -46,6 +47,7 @@ public class EditorController {
         outgoing = new ConcurrentLinkedQueue<>();
         opLog = new Stack<>();
         op = null;
+        this.clientId = clientCounter++;
     }
 
     public void setMainController(MainController mainController) {
@@ -65,7 +67,6 @@ public class EditorController {
     public void initialize() {
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
-        clientId++;  // every client increases clientId
 
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
