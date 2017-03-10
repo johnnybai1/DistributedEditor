@@ -263,6 +263,10 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.startPos;
         String content = op.content;
+        if (content.equals("\r")) {
+            content = "\r\n";
+            start -= 1;
+        }
         editor.insertText(start, content);
         editor.positionCaret(caret + 1);
     }
