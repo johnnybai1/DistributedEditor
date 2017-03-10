@@ -27,14 +27,9 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
 
     /**
      * Called when this client receives an operation from the server.
-     *
      * @param rcvdOp: Operation received from the server
      */
     private void receiveOperation(Operation rcvdOp) {
-//        if (rcvdOp.type == Operation.ACK) {
-//            controller.opsReceived += 1;
-//            return;
-//        }
         Operation fromServer = new Operation(rcvdOp);
         ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
         // Discard acknowledged operations
@@ -46,15 +41,15 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
                     }
                 }
             }
-        }
-        for (int i = 0; i < outgoing.size(); i++) {
-            // Transform incoming op with ones in outgoing queue
-            Operation C = new Operation(outgoing.remove()); // Copy the op
-            Operation[] transformed = Operation.transform(C, fromServer);
-            Operation cPrime = transformed[0];
-            Operation sPrime = transformed[1];
-            fromServer = sPrime;
-            outgoing.add(cPrime);
+            for (int i = 0; i < outgoing.size(); i++) {
+                // Transform incoming op with ones in outgoing queue
+                Operation C = new Operation(outgoing.remove()); // Copy the op
+                Operation[] transformed = Operation.transform(C, fromServer);
+                Operation cPrime = transformed[0];
+                Operation sPrime = transformed[1];
+                fromServer = sPrime;
+                outgoing.add(cPrime);
+            }
         }
         controller.apply(fromServer);
         System.out.println("Applying: " + fromServer);

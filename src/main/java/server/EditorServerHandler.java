@@ -27,7 +27,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     private int opsReceived; // How many ops this server received
 
     public EditorServerHandler(ChannelGroup cg, ConcurrentLinkedQueue<Operation> opLog) {
-        this.channels = cg;
+    	this.channels = cg;
         this.opLog = opLog;
         this.opsGenerated = 0;
         this.opsReceived = 0;
@@ -47,7 +47,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     /**
      * Called when an Operation object arrives in the channel.
      */
-    protected synchronized void channelRead0(ChannelHandlerContext ctx, Operation op) {
+    protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
         if (op.type == Operation.PRINT) {
             System.err.println("=================================");
             System.err.println("Number of operations in log: " + opLog.size());
@@ -60,8 +60,7 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
             Operation toClients = receiveOperation(op);
             for (Channel c : channels) {
                 if (c == ctx.channel()) {
-//                    c.writeAndFlush(new Operation(Operation.ACK));
-//                    continue;
+                    continue;
                 }
                 c.writeAndFlush(toClients);
             }
@@ -70,11 +69,10 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
 
     /**
      * Called when this server receives an operation from a client.
-     *
      * @param rcvdOp: Operation received from the client.
      * @return an Operation to be sent to clients
      */
-    private synchronized Operation receiveOperation(Operation rcvdOp) {
+    private Operation receiveOperation(Operation rcvdOp) {
         Operation fromClient = new Operation(rcvdOp);
         // Discard acknowledged messages
         if (!outgoing.isEmpty()) {
@@ -85,16 +83,16 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
                     }
                 }
             }
-        }
-        for (int i = 0; i < outgoing.size(); i++) {
-            // Transform incoming op with ones in outgoing queue
-            Operation S = new Operation(outgoing.remove()); // Copy the op
-            Operation[] transformed = Operation.transform(fromClient, S);
-            Operation cPrime = transformed[0];
-            Operation sPrime = transformed[1];
-            cPrime.opsReceived = opsReceived;
-            fromClient = cPrime;
-            outgoing.add(sPrime);
+            for (int i = 0; i < outgoing.size(); i++) {
+                // Transform incoming op with ones in outgoing queue
+                Operation S = new Operation(outgoing.remove()); // Copy the op
+                Operation[] transformed = Operation.transform(fromClient, S);
+                Operation cPrime = transformed[0];
+                Operation sPrime = transformed[1];
+                cPrime.opsReceived = opsReceived;
+                fromClient = cPrime;
+                outgoing.add(sPrime);
+            }
         }
         outgoing.add(fromClient);
         System.out.println("Applying: " + fromClient);
