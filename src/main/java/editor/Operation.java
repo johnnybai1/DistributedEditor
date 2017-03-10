@@ -365,6 +365,8 @@ public class Operation implements Serializable {
         }
         StringBuilder sb = new StringBuilder();
         sb.append("[(");
+        sb.append(clientId);
+        sb.append(" ");
         sb.append(opsGenerated);
         sb.append(",");
         sb.append(opsReceived);

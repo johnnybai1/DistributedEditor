@@ -76,28 +76,28 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     private Operation receiveOperation(Operation rcvdOp) {
         Operation fromClient = new Operation(rcvdOp);
         // Discard acknowledged messages
-        if (!outgoing.isEmpty()) {
-            for (Operation localOp : outgoing) {
-                if (localOp.opsGenerated < fromClient.opsReceived) {
-                    if (outgoing.remove(localOp)) {
-                        System.out.println("Removed: " + localOp);
-                    }
-                }
-            }
-        }
-        if (opsReceived > fromClient.opsGenerated + fromClient.opsReceived) {
-            for (int i = 0; i < outgoing.size(); i++) {
-                // Transform incoming op with ones in outgoing queue
-                Operation S = new Operation(outgoing.remove()); // Copy the op
-                Operation[] transformed = Operation.transform(fromClient, S);
-                Operation cPrime = transformed[0];
-                Operation sPrime = transformed[1];
-                cPrime.opsReceived = opsReceived;
-                fromClient = cPrime;
-                outgoing.add(sPrime);
-            }
-        }
-        outgoing.add(fromClient);
+//        if (!outgoing.isEmpty()) {
+//            for (Operation localOp : outgoing) {
+//                if (localOp.opsGenerated < fromClient.opsReceived) {
+//                    if (outgoing.remove(localOp)) {
+//                        System.out.println("Removed: " + localOp);
+//                    }
+//                }
+//            }
+//        }
+//        if (opsReceived > fromClient.opsGenerated + fromClient.opsReceived) {
+//            for (int i = 0; i < outgoing.size(); i++) {
+//                 Transform incoming op with ones in outgoing queue
+//                Operation S = new Operation(outgoing.remove()); // Copy the op
+//                Operation[] transformed = Operation.transform(fromClient, S);
+//                Operation cPrime = transformed[0];
+//                Operation sPrime = transformed[1];
+//                cPrime.opsReceived = opsReceived;
+//                fromClient = cPrime;
+//                outgoing.add(sPrime);
+//            }
+//        }
+//        outgoing.add(fromClient);
         opsReceived += 1;
         return fromClient;
     }

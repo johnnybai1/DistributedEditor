@@ -183,8 +183,8 @@ class Client {
         for (int i = 0; i < out.size(); i++) {
             // Transform incoming op with ones in outgoing queue
             Operation C = new Operation(out.remove());
-            if (C.opsGenerated == fromServer.opsGenerated &&
-                    C.opsReceived == fromServer.opsReceived &&
+            if (C.opsGenerated + C.opsReceived == fromServer.opsGenerated +
+                    fromServer.opsReceived &&
                     C.clientId < fromServer.clientId) {
                 // our Id is lower, we have priority!
                 ops = Operation.transform(fromServer, C);

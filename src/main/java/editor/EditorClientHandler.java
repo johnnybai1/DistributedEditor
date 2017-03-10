@@ -25,11 +25,48 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         receiveOperation(op);
     }
 
+    private void receiveOperation(Operation rcvdOp) {
+        ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
+        Operation fromServer = new Operation(rcvdOp);
+        // Discard acknowledged messages
+        if (!outgoing.isEmpty()) {
+            for (Operation o : outgoing) {
+                if (o.opsGenerated < fromServer.opsReceived) {
+                    outgoing.remove(o);
+                }
+            }
+        }
+        Operation[] ops;
+        Operation cPrime;
+        Operation sPrime;
+        for (int i = 0; i < outgoing.size(); i++) {
+            // Transform incoming op with ones in outgoing queue
+            Operation C = new Operation(outgoing.remove());
+            if (C.opsGenerated + C.opsReceived == fromServer.opsGenerated +
+                    fromServer.opsReceived &&
+                    C.clientId < fromServer.clientId) {
+                // our Id is lower, we have priority!
+                ops = Operation.transform(fromServer, C);
+                cPrime = ops[1];
+                sPrime = ops[0];
+            }
+            else {
+                ops = Operation.transform(C, fromServer);
+                cPrime = ops[0]; // transformed CLIENT op
+                sPrime = ops[1]; // transformed SERVER op
+            }
+            fromServer = sPrime;
+            outgoing.add(cPrime);
+        }
+        controller.apply(fromServer);
+        controller.opsReceived += 1;
+    }
+
     /**
      * Called when this client receives an operation from the server.
      * @param rcvdOp: Operation received from the server
      */
-    private void receiveOperation(Operation rcvdOp) {
+    private void OLDreceiveOperation(Operation rcvdOp) {
         Operation fromServer = new Operation(rcvdOp);
         ConcurrentLinkedQueue<Operation> outgoing = controller.outgoing;
         // Discard acknowledged operations
