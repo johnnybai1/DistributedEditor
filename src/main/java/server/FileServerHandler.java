@@ -32,23 +32,25 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
      * Called when a message arrives in the file server channel.
      */
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws FileNotFoundException {
-        File file = new File(msg);
+        System.out.println("Message received: " + msg);
+        File file = new File(MainServer.root + msg);
         if (file.exists()) {
             if (!file.isFile()) {
-            	for (Channel c: channels)
-            		ctx.writeAndFlush("Not a file: " + file + '\n');
-                return;
+//            	for (Channel c: channels)
+            		ctx.channel().writeAndFlush("Not a file: " + file + '\n');
+//                return;
             }
-            for (Channel c: channels)
-            {
+//            for (Channel c: channels)
+//            {
 	            // echo file contents
 	            FileRegion region = new DefaultFileRegion(new FileInputStream(file).getChannel(), 0, file.length());
-	            ctx.write(region);
-	            ctx.writeAndFlush("\n");
-            }
+                ctx.channel().writeAndFlush(file.length() + "\n"); // Tell client how long the file is
+	            ctx.channel().write(region);
+	            ctx.channel().writeAndFlush("\n");
+//            }
         } else {
-        	for (Channel c : channels)
-        		ctx.writeAndFlush("File not found: " + file + '\n');
+//        	for (Channel c : channels)
+        		ctx.channel().writeAndFlush("File not found: " + file + '\n');
         }
     }
 

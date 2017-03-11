@@ -2,6 +2,7 @@ package login;
 
 import chat.ChatClientInitializer;
 import editor.EditorClientInitializer;
+import editor.FileClientInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -46,6 +47,9 @@ public class LoginController {
     private Channel editorChannel; // connection to server handling editing operations
     private EventLoopGroup editorGroup;
 
+    private Channel fileChannel;
+    private EventLoopGroup fileGroup;
+
     public LoginController() {
     }
 
@@ -73,6 +77,7 @@ public class LoginController {
         extractFields();
         chatGroup = new NioEventLoopGroup();
         editorGroup = new NioEventLoopGroup();
+        fileGroup = new NioEventLoopGroup();
         try {
             // Establish connection to MainServer
             Bootstrap bsChat = new Bootstrap();
@@ -95,22 +100,24 @@ public class LoginController {
 
             // Establish connection to FileServer
             // TODO: Set up connection to the file server to load/save files
-//            Bootstrap bsFile = new Bootstrap();
-//            bsFile
-//                    .group(fileGroup)
-//                    .channel(NioSocketChannel.class)
-//                    .handler(new FileClientInitializer())
+            Bootstrap bsFile = new Bootstrap();
+            bsFile
+                    .group(fileGroup)
+                    .channel(NioSocketChannel.class)
+                    .handler(new FileClientInitializer(mainController.editorController, filePath));
+            fileChannel = bsFile.connect(host, port+2).sync().channel();
+            mainController.editorController.setFileChannel(fileChannel);
 
             connectPressed.set(true); // Connection established
 
             // Load the specified file if possible
             // TODO: If file does not exist on server/locally, create file?
-            if (!filePath.isEmpty()) {
-                File f = new File(filePath);
-                if (f.exists() && f.isFile() && f.canRead()) {
-                    mainController.editorController.populateEditor(f);
-                }
-            }
+//            if (!filePath.isEmpty()) {
+//                File f = new File(filePath);
+//                if (f.exists() && f.isFile() && f.canRead()) {
+//                    mainController.editorController.populateEditor(f);
+//                }
+//            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -123,7 +130,7 @@ public class LoginController {
         host = con[0];
         port = Integer.parseInt(con[1]);
         // Use server's root as path
-        filePath = MainServer.root + fileField.getText();
+        filePath = fileField.getText();
     }
 
     public VBox getLoginBox() {

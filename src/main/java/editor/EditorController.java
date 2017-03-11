@@ -32,6 +32,7 @@ public class EditorController {
 
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
+    private Channel fileChannel; // Connection to file server
 
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
@@ -56,6 +57,10 @@ public class EditorController {
 
     public void setChannel(Channel channel) {
         this.channel = channel;
+    }
+
+    public void setFileChannel(Channel channel) {
+        this.fileChannel = channel;
     }
 
 
@@ -249,6 +254,10 @@ public class EditorController {
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void populateEditor(String string) {
+        editor.appendText(string + "\n");
     }
 
 

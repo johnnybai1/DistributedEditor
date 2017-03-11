@@ -1,5 +1,3 @@
-package main;
-
 import editor.Operation;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,7 +48,6 @@ public class TestOTAlgorithm {
 
         System.out.println(clientA);
         System.out.println(clientB);
-
 
     }
 
