@@ -16,9 +16,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import main.MainController;
-import server.MainServer;
-
-import java.io.File;
 
 /**
  * Responsible for establishing a connection to the chat and editor servers as
@@ -47,7 +44,7 @@ public class LoginController {
     private Channel editorChannel; // connection to server handling editing operations
     private EventLoopGroup editorGroup;
 
-    private Channel fileChannel;
+    private Channel fileChannel; // connection to server handling files
     private EventLoopGroup fileGroup;
 
     public LoginController() {
@@ -94,12 +91,11 @@ public class LoginController {
             bsEditor
                     .group(editorGroup)
                     .channel(NioSocketChannel.class)
-                    .handler(new EditorClientInitializer(mainController.editorController));
+                    .handler(new EditorClientInitializer(mainController.editorController, filePath));
             editorChannel = bsEditor.connect(host, port+1).sync().channel();
             mainController.editorController.setChannel(editorChannel);
 
             // Establish connection to FileServer
-            // TODO: Set up connection to the file server to load/save files
             Bootstrap bsFile = new Bootstrap();
             bsFile
                     .group(fileGroup)
@@ -110,14 +106,6 @@ public class LoginController {
 
             connectPressed.set(true); // Connection established
 
-            // Load the specified file if possible
-            // TODO: If file does not exist on server/locally, create file?
-//            if (!filePath.isEmpty()) {
-//                File f = new File(filePath);
-//                if (f.exists() && f.isFile() && f.canRead()) {
-//                    mainController.editorController.populateEditor(f);
-//                }
-//            }
         }
         catch (Exception e) {
             e.printStackTrace();

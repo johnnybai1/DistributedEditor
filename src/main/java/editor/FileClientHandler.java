@@ -16,9 +16,8 @@ public class FileClientHandler extends SimpleChannelInboundHandler<String> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         if (!filePath.isEmpty()) {
-            System.out.println("Connected!");
             ctx.channel().writeAndFlush(filePath + '\n');
         }
     }
@@ -28,14 +27,14 @@ public class FileClientHandler extends SimpleChannelInboundHandler<String> {
      */
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         if (received == -1) {
-            System.out.println(msg);
             received = -1 * Integer.parseInt(msg);
         }
         else {
             received += msg.length();
-            System.out.println(received);
             final String toApply = msg;
-            Platform.runLater(() -> controller.populateEditor(toApply));
+            if (received < 0) {
+                Platform.runLater(() -> controller.populateEditor(toApply));
+            }
         }
     }
 

@@ -10,9 +10,11 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 public class EditorClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private EditorController controller;
+    private String filePath;
 
-    public EditorClientInitializer(EditorController controller) {
+    public EditorClientInitializer(EditorController controller, String filePath) {
         this.controller = controller;
+        this.filePath = filePath;
     }
 
     @Override
@@ -25,7 +27,7 @@ public class EditorClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(
                 ClassLoader.getSystemClassLoader())));
         pipeline.addLast(new ObjectEncoder());
-        pipeline.addLast(new EditorClientHandler(controller));
+        pipeline.addLast(new EditorClientHandler(controller, filePath));
 
 
     }

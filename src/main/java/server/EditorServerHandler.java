@@ -6,7 +6,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.Attribute;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import sun.applet.Main;
 
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -54,12 +56,18 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
             for (Operation oper : opLog) {
                 System.err.println(oper);
             }
+        } else if (op.type == Operation.CONNECT) {
+            // Bind the file being edited to the channel
+            ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.content);
         } else {
+            String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
             System.out.println("RECEIVED: " + op);
             opLog.add(op);
             Operation toClients = receiveOperation(op);
             for (Channel c : channels) {
-                if (c == ctx.channel()) {
+                if (c == ctx.channel() ||
+                        !filePath.equals(c.attr(MainServer.PATHKEY).get())) {
+                    // Don't send to sender or clients editing other files
                     continue;
                 }
                 c.writeAndFlush(toClients);

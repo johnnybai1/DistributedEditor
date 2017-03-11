@@ -13,11 +13,11 @@ import io.netty.channel.group.ChannelGroup;
 
 public class FileServerHandler extends SimpleChannelInboundHandler<String> {
 
-	ChannelGroup channels = null;
-	
-	public FileServerHandler(ChannelGroup cg) {
-		this.channels = cg;
-	}
+    ChannelGroup channels = null;
+
+    public FileServerHandler(ChannelGroup cg) {
+        this.channels = cg;
+    }
 
     @Override
     /**
@@ -36,21 +36,14 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
         File file = new File(MainServer.root + msg);
         if (file.exists()) {
             if (!file.isFile()) {
-//            	for (Channel c: channels)
-            		ctx.channel().writeAndFlush("Not a file: " + file + '\n');
-//                return;
+                ctx.channel().writeAndFlush("Not a file: " + file + '\n');
             }
-//            for (Channel c: channels)
-//            {
-	            // echo file contents
-	            FileRegion region = new DefaultFileRegion(new FileInputStream(file).getChannel(), 0, file.length());
-                ctx.channel().writeAndFlush(file.length() + "\n"); // Tell client how long the file is
-	            ctx.channel().write(region);
-	            ctx.channel().writeAndFlush("\n");
-//            }
+            FileRegion region = new DefaultFileRegion(new FileInputStream(file).getChannel(), 0, file.length());
+            ctx.channel().writeAndFlush(file.length() + "\n"); // Tell client how long the file is
+            ctx.channel().write(region);
+            ctx.channel().writeAndFlush("\n");
         } else {
-//        	for (Channel c : channels)
-        		ctx.channel().writeAndFlush("File not found: " + file + '\n');
+            ctx.channel().writeAndFlush("File not found: " + file + '\n');
         }
     }
 

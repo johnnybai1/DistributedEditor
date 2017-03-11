@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.AttributeKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,13 +22,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class MainServer {
 
+    // To allow us to route Operations to appropriate clients
+    public static final AttributeKey<String> PATHKEY = AttributeKey.valueOf("filepath");
+
     // To store operations from clients
     private ConcurrentLinkedQueue<Operation> opLog = new ConcurrentLinkedQueue<>();
     private int chatPort; // Chat server port we are listening on
     private int editorPort; // Editor server port we are listening on
     private int filePort; // File server port we are listening on
-
-    public static int version; // Editor server's document version
 
     public static final String root = "root/";
 

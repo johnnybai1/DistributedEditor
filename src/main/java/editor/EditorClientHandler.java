@@ -11,9 +11,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> {
 
     private EditorController controller;
+    private String filePath;
 
-    public EditorClientHandler(EditorController controller) {
+    public EditorClientHandler(EditorController controller, String filePath) {
         this.controller = controller;
+        this.filePath = filePath;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ctx.writeAndFlush(new Operation(Operation.CONNECT, filePath));
     }
 
     @Override

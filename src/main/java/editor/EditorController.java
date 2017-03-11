@@ -63,7 +63,6 @@ public class EditorController {
         this.fileChannel = channel;
     }
 
-
     @SuppressWarnings("restriction")
     @FXML
     /**
