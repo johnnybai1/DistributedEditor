@@ -14,10 +14,6 @@ import javafx.scene.layout.VBox;
 import javafx.event.*;
 import main.MainController;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -41,8 +37,9 @@ public class EditorController {
     int opsReceived; // How many ops this client received
     int clientId; // Id of client
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
-    private String copied;
 
+    private String filePath; // file we are modifying
+    private String copied; // copy paste mechanism
     private boolean commandPressed; // toggled when command key is pressed/released
 
     public EditorController() {
@@ -66,6 +63,7 @@ public class EditorController {
     public void setFileChannel(Channel channel) {
         this.fileChannel = channel;
     }
+
 
     @SuppressWarnings("restriction")
     @FXML
@@ -265,29 +263,13 @@ public class EditorController {
         new Thread(task).start();
     }
 
-    /**
-     * Intended to be called by the LoginController. User specifies a file to
-     * populate the editor (TextArea) with.
-     * @param file
-     */
-    public void populateEditor(File file) {
-        try {
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(file)));
-            String line;
-            while ((line = br.readLine()) != null) {
-                editor.appendText(line + "\r\n");
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void populateEditor(String string) {
         editor.appendText(string + "\n");
     }
 
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
 
     /**
      * Updates the editor text area based on operations with single character
@@ -352,13 +334,12 @@ public class EditorController {
         editor.positionCaret(caret - start + end);
     }
 
-    /**
-     * Prints the current log of operations
-     */
-    public void printLog() {
-        for (int i = 0; i < opLog.size(); i++) {
-            System.out.println("Op" + i + ": " + opLog.get(i));
-        }
+    public void save() {
+        String fileContent = editor.getText();
+        fileChannel.writeAndFlush("savereq__" + filePath + "__" + fileContent.length() + "\n");
+        // savereq__path/to/file.txt__length
+        // contents
+        fileChannel.writeAndFlush(fileContent + "\n");
     }
 
     public VBox getEditorBox() {

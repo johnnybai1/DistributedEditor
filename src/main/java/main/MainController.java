@@ -3,6 +3,7 @@ package main;
 import chat.ChatController;
 import editor.EditorController;
 import editor.Operation;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuBar;
 import login.LoginController;
@@ -38,41 +39,13 @@ public class MainController {
     }
 
     @FXML
-    /**
-     * Debug tool: selecting print log in menu will print the local operation
-     * log
-     */
-    public void printLog() {
-        editorController.printLog();
+    public void close() {
+        loginController.shutdown();
+        Platform.exit();
     }
 
     @FXML
-    /**
-     * Debug tool: selecting print server log in menu will print the operations
-     * stored in the server queue
-     */
-    public void printServerLog() {
-        editorController.send(new Operation(Operation.PRINT));
+    public void save() {
+        editorController.save();
     }
-
-    @FXML
-    // TODO: Debug tool: selecting apply() will apply some operation to the editor
-    public void applyInsert() {
-        Operation op1 = new Operation(Operation.INSERT);
-        op1.startPos = 10;
-        op1.content = "TESTING AN INSERT";
-        editorController.apply(op1);
-    }
-
-    @FXML
-    public void applyDelete() {
-        Operation op = new Operation(Operation.DELETE);
-        op.startPos = 50;
-        op.finalPos = 40;
-        editorController.apply(op);
-    }
-
-
-
-
 }

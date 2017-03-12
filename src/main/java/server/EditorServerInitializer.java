@@ -20,10 +20,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
 
 	ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private ConcurrentLinkedQueue<Operation> opLog;
 
-    public EditorServerInitializer(ConcurrentLinkedQueue<Operation> opLog) {
-        this.opLog = opLog;
+    public EditorServerInitializer() {
     }
 
     @Override
@@ -35,6 +33,6 @@ public class EditorServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(
                 ClassLoader.getSystemClassLoader())));
         pipeline.addLast(new ObjectEncoder());
-        pipeline.addLast("ot logic", new EditorServerHandler(channels, opLog));
+        pipeline.addLast("ot logic", new EditorServerHandler(channels));
     }
 }

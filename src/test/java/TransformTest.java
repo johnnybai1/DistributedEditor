@@ -1,4 +1,4 @@
-package editor;
+import editor.Operation;
 
 /**
  * Tests single character edits.

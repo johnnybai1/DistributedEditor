@@ -24,9 +24,8 @@ public class MainServer {
 
     // To allow us to route Operations to appropriate clients
     public static final AttributeKey<String> PATHKEY = AttributeKey.valueOf("filepath");
+    public static final AttributeKey<Boolean> SAVEKEY = AttributeKey.valueOf("saving");
 
-    // To store operations from clients
-    private ConcurrentLinkedQueue<Operation> opLog = new ConcurrentLinkedQueue<>();
     private int chatPort; // Chat server port we are listening on
     private int editorPort; // Editor server port we are listening on
     private int filePort; // File server port we are listening on
@@ -60,7 +59,7 @@ public class MainServer {
             editor.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new EditorServerInitializer(opLog));
+                    .childHandler(new EditorServerInitializer());
             futures.add(editor.bind(editorPort));
             // Start the file server
             ServerBootstrap fileServer = new ServerBootstrap();

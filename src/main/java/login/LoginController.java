@@ -161,5 +161,11 @@ public class LoginController {
         return editorChannel;
     }
 
+    public void shutdown() {
+        chatGroup.shutdownGracefully();
+        editorGroup.shutdownGracefully();
+        fileGroup.shutdownGracefully();
+    }
+
 
 }

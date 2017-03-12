@@ -10,6 +10,7 @@ import io.netty.util.Attribute;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import sun.applet.Main;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -19,21 +20,18 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> {
 
+    // Communication channels
     static ChannelGroup channels = null;
-    private ConcurrentLinkedQueue<Operation> opLog; // TODO: probably won't need this anymore
-
-    // TODO: Might not need the below if we use this server as message passer
-    private ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
+    // How many operations server has received for each file being edited
+    static HashMap<String, Integer> fileStates = new HashMap<>(); // For loads
 
     private int opsGenerated; // How many ops this server generated
     private int opsReceived; // How many ops this server received
 
-    public EditorServerHandler(ChannelGroup cg, ConcurrentLinkedQueue<Operation> opLog) {
+    public EditorServerHandler(ChannelGroup cg) {
         this.channels = cg;
-        this.opLog = opLog;
         this.opsGenerated = 0;
         this.opsReceived = 0;
-        outgoing = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -50,19 +48,14 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
      * Called when an Operation object arrives in the channel.
      */
     protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
-        if (op.type == Operation.PRINT) {
-            System.err.println("=================================");
-            System.err.println("Number of operations in log: " + opLog.size());
-            for (Operation oper : opLog) {
-                System.err.println(oper);
-            }
-        } else if (op.type == Operation.CONNECT) {
+        if (op.type == Operation.CONNECT) {
             // Bind the file being edited to the channel
             ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.content);
         } else {
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
+            int curr = fileStates.getOrDefault(filePath, 0);
+            fileStates.put(filePath, curr + 1);
             System.out.println("RECEIVED: " + op);
-            opLog.add(op);
             Operation toClients = receiveOperation(op);
             for (Channel c : channels) {
                 if (c == ctx.channel() ||
@@ -106,7 +99,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
 //            }
 //        }
 //        outgoing.add(fromClient);
-        opsReceived += 1;
         return fromClient;
     }
 
