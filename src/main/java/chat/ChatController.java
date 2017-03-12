@@ -48,6 +48,7 @@ public class ChatController {
                 input.clear();
             }
         });
+        messages.setWrapText(true);
     }
 
     /**

@@ -32,8 +32,9 @@ public class FileClientHandler extends SimpleChannelInboundHandler<String> {
         }
         else {
             received += msg.length();
-            if (msg.length() == 0) {
-                msg = "\n";
+            if (msg.length() == 0 || msg.equals("\r") || msg.equals("\r\n") ||
+                    msg.equals("\n")) {
+                msg = "\r\n";
                 received += 1;
             }
             final String toApply = msg;

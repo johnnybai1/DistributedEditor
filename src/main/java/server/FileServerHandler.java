@@ -52,7 +52,7 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
             int received = fileLengths.get(ctx.channel()) + msg.length();
             if (msg.isEmpty()) {
                 received += 1;
-                updates.get(ctx.channel()).write("\n");
+                updates.get(ctx.channel()).write("\r\n");
             }
             else {
                 updates.get(ctx.channel()).write(msg);
@@ -70,14 +70,14 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
             File file = new File(MainServer.root + msg);
             if (file.exists()) {
                 if (!file.isFile()) {
-                    ctx.channel().writeAndFlush("Not a file: " + file + '\n');
+                    ctx.channel().writeAndFlush("Not a file: " + file + "\r\n");
                 }
                 FileRegion region = new DefaultFileRegion(new FileInputStream(file).getChannel(), 0, file.length());
-                ctx.channel().writeAndFlush(file.length() + "\n"); // Tell client how long the file is
+                ctx.channel().writeAndFlush(file.length() + "\r\n"); // Tell client how long the file is
                 ctx.channel().write(region);
-                ctx.channel().writeAndFlush("\n");
+                ctx.channel().writeAndFlush("\r\n");
             } else {
-                ctx.channel().writeAndFlush("File not found: " + file + '\n');
+                ctx.channel().writeAndFlush("File not found: " + file + "\r\n");
             }
         }
     }
