@@ -30,7 +30,12 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      */
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
         System.err.println("FROM SERVER: " + op);
-        receiveOperation(op);
+        if (op.type == Operation.CONNECT) {
+            controller.opsReceived = Integer.parseInt(op.content);
+        }
+        else {
+            receiveOperation(op);
+        }
     }
 
     private void receiveOperation(Operation rcvdOp) {

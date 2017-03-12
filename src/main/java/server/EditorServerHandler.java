@@ -51,6 +51,8 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         if (op.type == Operation.CONNECT) {
             // Bind the file being edited to the channel
             ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.content);
+            ctx.channel().writeAndFlush(new Operation(Operation.CONNECT,
+                    String.valueOf(fileStates.getOrDefault(op.content, 0))));
         } else {
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
             int curr = fileStates.getOrDefault(filePath, 0);
