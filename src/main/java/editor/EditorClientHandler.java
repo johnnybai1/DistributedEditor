@@ -73,7 +73,9 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         }
         final Operation toApply = fromServer;
 
-        controller.applyBatched(toApply);
+        Platform.runLater(() -> {
+            controller.applyBatched(toApply);
+                });
         controller.opsReceived += 1;
     }
 
