@@ -141,6 +141,7 @@ public class EditorController {
                     // Backspace pressed, and not at beginning of text
                     op = new Operation(Operation.DELETE);
                     op.leftIdx = editor.getCaretPosition();
+                    op.rightIdx = op.leftIdx - 1;
                     send(op);
                     op = null;
                 }
@@ -362,6 +363,9 @@ public class EditorController {
         if (op.type == Operation.DELETE) {
             doBatchedDelete(op);
         }
+        if (op.type == Operation.REPLACE) {
+            doReplace(op);
+        }
     }
 
     private void doBatchedInsert(Operation op) {
@@ -375,7 +379,7 @@ public class EditorController {
     private void doBatchedDelete(Operation op) {
         int left = op.leftIdx;
         int right = op.rightIdx;
-        editor.deleteText(left, right);
+        editor.deleteText(right, left);
         editor.positionCaret(left);
     }
 

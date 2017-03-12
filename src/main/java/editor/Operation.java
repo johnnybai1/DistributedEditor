@@ -227,6 +227,12 @@ public class Operation implements Serializable {
         if (client.type == DELETE && server.type == DELETE) {
             return transformBatchedDeletes(client, server);
         }
+        if (client.type == INSERT && server.type == DELETE) {
+            return transformedBatchedInsertDelete(client, server);
+        }
+        if (client.type == DELETE && server.type == INSERT) {
+            return transformedBatchedDeleteInsert(client, server);
+        }
         return ops;
     }
 
