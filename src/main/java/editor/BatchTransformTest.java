@@ -26,7 +26,7 @@ public class BatchTransformTest {
      * Performs an insert operation on the string.
      */
     private static String applyBatchInsert(String s, Operation op) {
-        int idx = op.startPos;
+        int idx = op.leftIdx;
         String left = s.substring(0, idx);
         String right = s.substring(idx);
         return left + op.content + right;
@@ -37,10 +37,10 @@ public class BatchTransformTest {
      */
     private static String applyBatchDelete(String s, Operation op) {
         String left = "";
-        if (op.finalPos > 0) {
-            left = s.substring(0, op.finalPos);
+        if (op.rightIdx > 0) {
+            left = s.substring(0, op.rightIdx);
         }
-        String right = s.substring(op.startPos);
+        String right = s.substring(op.leftIdx);
         return left + right;
     }
 
@@ -160,15 +160,15 @@ public class BatchTransformTest {
     public static void main(String[] args) {
         String s = "12345";
         Operation op = new Operation(Operation.INSERT);
-        op.startPos = 3;
+        op.leftIdx = 3;
         op.content = "ADDED";
         String mod = applyBatchInsert(s, op);
         System.out.println(mod);
 
         s = "012345";
         op = new Operation(Operation.DELETE);
-        op.startPos = 3;
-        op.finalPos = 2;
+        op.leftIdx = 3;
+        op.rightIdx = 2;
         mod = applyBatchDelete(s, op);
         System.out.println(mod);
 

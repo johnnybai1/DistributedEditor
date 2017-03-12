@@ -6,6 +6,7 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 
 import javafx.animation.Timeline;
+import javafx.scene.control.IndexRange;
 import javafx.util.Duration;
 import javafx.animation.KeyFrame;
 import javafx.scene.control.TextArea;
@@ -14,6 +15,10 @@ import javafx.scene.layout.VBox;
 import javafx.event.*;
 import main.MainController;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.io.IOException;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -39,8 +44,11 @@ public class EditorController {
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     private String filePath; // file we are modifying
-    private String copied; // copy paste mechanism
+    private String selected; // text selection
+    private IndexRange selectedRange; // range on text selection
     private boolean commandPressed; // toggled when command key is pressed/released
+
+    private Clipboard clipboard;
 
     public EditorController() {
         this.opsGenerated = 0;
@@ -50,6 +58,10 @@ public class EditorController {
         op = null;
         commandPressed = false;
         this.clientId = clientCounter++;
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        clipboard = tk.getSystemClipboard();
+        selected = null;
+        selectedRange = null;
     }
 
     public void setMainController(MainController mainController) {
@@ -79,23 +91,34 @@ public class EditorController {
             String c = event.getCharacter(); // what we typed
             if (!c.isEmpty() && !commandPressed) {
                 op = new Operation(Operation.INSERT); // insert operation
-                op.startPos = editor.getCaretPosition(); // start = cursor pos
+                op.leftIdx = editor.getCaretPosition(); // leftIdx = cursor pos
                 op.content = c; // content is what we typed
                 send(op);
                 op = null;
             }
             if (commandPressed) {
-                if (c.equals("c")) {
-                    // Copy
-                    copied = editor.getSelectedText();
-                }
-                if (c.equals("v") && copied != null && copied.length() > 0) {
+                if (c.equals("v")) {
                     // Paste
-                    op = new Operation(Operation.INSERT);
-                    op.content = copied;
-                    op.startPos = editor.getCaretPosition() - copied.length();
-                    send(op);
-                    op = null;
+                    try {
+                        op = new Operation(Operation.INSERT);
+                        // Get from System's clipboard
+                        String copied = (String) clipboard.getData(DataFlavor.stringFlavor);
+                        // since we do not consume this, we adjust the insert position
+                        // since caret position is AFTER the text has been pasted
+                        op.leftIdx = editor.getCaretPosition() - copied.length();
+                        op.content = copied;
+                        send(op);
+                        op = null;
+                    }
+                    catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+                if (c.equals("s")) {
+                    save();
+                }
+                if (c.equals("q")) {
+                    mainController.close();
                 }
             }
         });
@@ -104,12 +127,23 @@ public class EditorController {
             // KeyPressed are keys that would not be displayed on the TextArea
             // For special keys, e.g. backspace, command, shift, etc.
             // Can use this to introduce shortcuts (e.g. COMMAND+S to save)
-            if (event.getCode() == KeyCode.BACK_SPACE && editor.getCaretPosition() > 0) {
-                // Backspace pressed, and not at beginning of text
-                op = new Operation(Operation.DELETE);
-                op.startPos = editor.getCaretPosition();
-                send(op);
-                op = null;
+            selected = editor.getSelectedText();
+            selectedRange = editor.getSelection();
+            if (event.getCode() == KeyCode.BACK_SPACE) {
+                if (!selected.isEmpty()) {
+                    op = new Operation(Operation.DELETE);
+                    op.leftIdx = selectedRange.getStart();
+                    op.rightIdx = selectedRange.getEnd();
+                    send(op);
+                    op = null;
+                }
+                else if (editor.getCaretPosition() > 0) {
+                    // Backspace pressed, and not at beginning of text
+                    op = new Operation(Operation.DELETE);
+                    op.leftIdx = editor.getCaretPosition();
+                    send(op);
+                    op = null;
+                }
             }
             if (event.getCode() == KeyCode.COMMAND) {
                 commandPressed = true;
@@ -122,6 +156,10 @@ public class EditorController {
             }
         });
 
+        editor.setOnMouseClicked(event -> {
+            selected = null;
+            selectedRange = null;
+        });
 
     }
 
@@ -143,7 +181,7 @@ public class EditorController {
     	    		if (previousOp != null && previousOp.equals(op))
     	    		{
     	    			// user is idle
-                        op.finalPos = editor.getCaretPosition();
+                        op.rightIdx = editor.getCaretPosition();
                         System.out.println("User is idle, adding: " + op);
                         // Push to logs
                         opLog.push(op);
@@ -175,13 +213,13 @@ public class EditorController {
                     // Create a new operation since none existed before
                     op = new Operation(Operation.INSERT);
                     // Set start position to where caret (cursor) currently is
-                    op.startPos = editor.getCaretPosition();
+                    op.leftIdx = editor.getCaretPosition();
                 }
                 // We had a series of deletes, but now we have an insert
                 if (op.type == Operation.DELETE) {
                     send(op); // Send to server
                     op = new Operation(Operation.INSERT); // Create new Operation for these inserts
-                    op.startPos = editor.getCaretPosition(); // Set start position
+                    op.leftIdx = editor.getCaretPosition(); // Set start position
                 }
                 op.content += c; // Append characters to track changes
                 if (c.equals("\r") || c.equals(" ") ||
@@ -213,19 +251,19 @@ public class EditorController {
                 if (op == null) {
                     // Create a new operation for deletions
                     op = new Operation(Operation.DELETE);
-                    op.startPos = editor.getCaretPosition();
-                    op.finalPos = op.startPos;
+                    op.leftIdx = editor.getCaretPosition();
+                    op.rightIdx = op.leftIdx;
                 }
                 if (op.type == Operation.INSERT) {
                     // If we switched from inserting to deleting
                     send(op);
                     op = new Operation(Operation.DELETE);
-                    op.startPos = editor.getCaretPosition();
-                    op.finalPos = op.startPos;
+                    op.leftIdx = editor.getCaretPosition();
+                    op.rightIdx = op.leftIdx;
                 }
                 if (op.type == Operation.DELETE) {
                     // Decrement our final position for a series of deletions
-                    op.finalPos --;
+                    op.rightIdx--;
                 }
             }
         });
@@ -286,7 +324,7 @@ public class EditorController {
 
     private void doInsert(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.startPos;
+        int start = op.leftIdx;
         String content = op.content;
         if (content.equals("\r")) {
             content = "\r\n";
@@ -298,12 +336,20 @@ public class EditorController {
 
     private void doDelete(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.startPos;
+        int start = op.leftIdx;
         editor.deleteText(start-1, start);
         if (start <= caret) {
             // Deleted prior to our caret position
             editor.positionCaret(caret - 1);
         }
+    }
+
+    private void doReplace(Operation op) {
+        int left = op.leftIdx;
+        int right = op.rightIdx;
+        editor.deleteText(left, right);
+        editor.insertText(left, op.content);
+        editor.positionCaret(left + op.content.length());
     }
 
     /**
@@ -320,24 +366,23 @@ public class EditorController {
 
     private void doBatchedInsert(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.startPos;
+        int start = op.leftIdx;
         String content = op.content;
         editor.insertText(start, content);
         editor.positionCaret(caret + content.length());
     }
 
     private void doBatchedDelete(Operation op) {
-        int caret = editor.getCaretPosition();
-        int start = op.startPos;
-        int end = op.finalPos;
-        editor.deleteText(end, start);
-        editor.positionCaret(caret - start + end);
+        int left = op.leftIdx;
+        int right = op.rightIdx;
+        editor.deleteText(left, right);
+        editor.positionCaret(left);
     }
 
     public void save() {
         String fileContent = editor.getText();
-        fileChannel.writeAndFlush("savereq__" + filePath + "__" + fileContent.length() + "\n");
         // savereq__path/to/file.txt__length
+        fileChannel.writeAndFlush("savereq__" + filePath + "__" + fileContent.length() + "\n");
         // contents
         fileChannel.writeAndFlush(fileContent + "\n");
     }

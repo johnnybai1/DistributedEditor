@@ -16,14 +16,14 @@ public class TransformTest {
     }
 
     private static String applyInsert(String s, Operation op) {
-        int idx = op.startPos;
+        int idx = op.leftIdx;
         String left = s.substring(0, idx);
         String right = s.substring(idx);
         return left + op.content + right;
     }
 
     private static String applyDelete(String s, Operation op) {
-        int idx = op.startPos;
+        int idx = op.leftIdx;
         String left = "";
         if (idx > 0) {
             left = s.substring(0, idx-1);

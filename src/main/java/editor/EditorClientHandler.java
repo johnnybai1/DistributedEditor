@@ -59,12 +59,12 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
                     fromServer.opsReceived &&
                     C.clientId < fromServer.clientId) {
                 // our Id is lower, we have priority!
-                ops = Operation.transform(fromServer, C);
+                ops = Operation.transformBatch(fromServer, C);
                 cPrime = ops[1];
                 sPrime = ops[0];
             }
             else {
-                ops = Operation.transform(C, fromServer);
+                ops = Operation.transformBatch(C, fromServer);
                 cPrime = ops[0]; // transformed CLIENT op
                 sPrime = ops[1]; // transformed SERVER op
             }
@@ -74,7 +74,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         final Operation toApply = fromServer;
 
         Platform.runLater(() -> {
-            controller.apply(toApply);
+            controller.applyBatched(toApply);
                 });
         controller.opsReceived += 1;
     }
