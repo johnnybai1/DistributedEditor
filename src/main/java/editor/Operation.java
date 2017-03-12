@@ -130,17 +130,17 @@ public class Operation implements Serializable {
         // S inserts at a position after C's insert
         if (idxS > idxC) {
             // C must insert S's operation at a later position
-            sPrime.startPos += 1;
+            sPrime.startPos += C.content.length();
         }
         // S inserts at a position before C's insert
         if (idxS < idxC) {
             // S must insert C's operation at a later position
-            cPrime.startPos += 1;
+            cPrime.startPos += S.content.length();
         }
         // C inserts at the same position as S's insert
         if (idxC == idxS) {
             // Let S win, S must insert C's operation at a later position
-            cPrime.startPos += 1;
+            cPrime.startPos += S.content.length();
         }
         ops[0] = cPrime;
         ops[1] = sPrime;
@@ -187,7 +187,7 @@ public class Operation implements Serializable {
         Operation sPrime = new Operation(S);
         // S deletes at a position after C's insertion
         if (idxS > idxC) {
-            sPrime.startPos += 1;
+            sPrime.startPos += C.content.length();
         }
         // S deletes at a position before C's insertion
         if (idxS < idxC) {
@@ -217,10 +217,10 @@ public class Operation implements Serializable {
         }
         if (idxS < idxC) {
             // Server inserts at an earlier position than client deletion
-            cPrime.startPos += 1;
+            cPrime.startPos += S.content.length();
         }
         if (idxS == idxC) {
-            sPrime.startPos -= 1;
+            sPrime.startPos -= S.content.length();
         }
         ops[0] = cPrime;
         ops[1] = sPrime;
@@ -247,27 +247,24 @@ public class Operation implements Serializable {
      * Transforms two insert operations. Returns two operations, one the client
      * should apply and one the server should apply to reach a consistent state.
      */
-    private static Operation[] transformBatchedInserts(Operation client, Operation server) {
+    private static Operation[] transformBatchedInserts(Operation C, Operation S) {
         Operation[] ops = new Operation[2]; // [c'][s']
-        // Transformed operation for client to execute
-        Operation forClient = new Operation(server); // s'
-        // Transformed operation for server to execute
-        Operation forServer = new Operation(client); // c'
+        int idxC = C.startPos;
+        int idxS = S.startPos;
+        Operation cPrime = new Operation(C); // to be executed by S
+        Operation sPrime = new Operation(S); // to be executed by C
 
-        int serverIndex = server.startPos;
-        int clientIndex = client.startPos;
-
-        if (serverIndex <= clientIndex) {
-            // Transform as if server's insert occurred first
-            // Insert from client has insert position shifted by length of
-            // server's content inserted
-            forServer.startPos += client.content.length();
+        if (idxS > idxC) {
+            sPrime.startPos += C.content.length();
         }
-        else if (clientIndex <= serverIndex) {
-            forClient.startPos += server.content.length();
+        if (idxS < idxC) {
+            cPrime.startPos += S.content.length();
         }
-        ops[0] = forClient;
-        ops[1] = forServer;
+        if (idxS == idxC) {
+            cPrime.startPos += S.content.length();
+        }
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 

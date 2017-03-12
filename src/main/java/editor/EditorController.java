@@ -41,6 +41,9 @@ public class EditorController {
     int opsReceived; // How many ops this client received
     int clientId; // Id of client
     ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
+    private String copied;
+
+    private boolean commandPressed; // toggled when command key is pressed/released
 
     public EditorController() {
         this.opsGenerated = 0;
@@ -48,6 +51,7 @@ public class EditorController {
         outgoing = new ConcurrentLinkedQueue<>();
         opLog = new Stack<>();
         op = null;
+        commandPressed = false;
         this.clientId = clientCounter++;
     }
 
@@ -75,12 +79,26 @@ public class EditorController {
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
             String c = event.getCharacter(); // what we typed
-            if (!c.isEmpty()) {
+            if (!c.isEmpty() && !commandPressed) {
                 op = new Operation(Operation.INSERT); // insert operation
                 op.startPos = editor.getCaretPosition(); // start = cursor pos
                 op.content = c; // content is what we typed
                 send(op);
                 op = null;
+            }
+            if (commandPressed) {
+                if (c.equals("c")) {
+                    // Copy
+                    copied = editor.getSelectedText();
+                }
+                if (c.equals("v") && copied != null && copied.length() > 0) {
+                    // Paste
+                    op = new Operation(Operation.INSERT);
+                    op.content = copied;
+                    op.startPos = editor.getCaretPosition() - copied.length();
+                    send(op);
+                    op = null;
+                }
             }
         });
 
@@ -95,7 +113,18 @@ public class EditorController {
                 send(op);
                 op = null;
             }
+            if (event.getCode() == KeyCode.COMMAND) {
+                commandPressed = true;
+            }
         });
+
+        editor.setOnKeyReleased(event -> {
+            if (event.getCode() == KeyCode.COMMAND) {
+                commandPressed = false;
+            }
+        });
+
+
     }
 
     @SuppressWarnings("restriction")
