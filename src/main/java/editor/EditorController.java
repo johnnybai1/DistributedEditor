@@ -372,6 +372,10 @@ public class EditorController {
         int caret = editor.getCaretPosition();
         int start = op.leftIdx;
         String content = op.content;
+        if (content.equals("\r")) {
+            content = "\r\n";
+            start -= 1;
+        }
         editor.insertText(start, content);
         editor.positionCaret(caret + content.length());
     }
@@ -379,9 +383,10 @@ public class EditorController {
     private void doBatchedDelete(Operation op) {
         int left = op.leftIdx;
         int right = op.rightIdx;
-        editor.deleteText(right, left);
+        editor.deleteText(left, right);
         editor.positionCaret(left);
     }
+
 
     public void save() {
         String fileContent = editor.getText();
