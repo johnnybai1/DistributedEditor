@@ -14,9 +14,11 @@ import io.netty.handler.codec.string.StringEncoder;
 public class ChatClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private ChatController controller;
+    private String filePath;
 
-    public ChatClientInitializer(ChatController controller) {
+    public ChatClientInitializer(ChatController controller, String filePath) {
         this.controller = controller;
+        this.filePath = filePath;
     }
 
     @Override
@@ -29,7 +31,7 @@ public class ChatClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
-        pipeline.addLast(new ChatClientHandler(controller));
+        pipeline.addLast(new ChatClientHandler(controller, filePath));
 
 
     }

@@ -81,7 +81,7 @@ public class LoginController {
             bsChat
                     .group(chatGroup)
                     .channel(NioSocketChannel.class)
-                    .handler(new ChatClientInitializer(mainController.chatController));
+                    .handler(new ChatClientInitializer(mainController.chatController, filePath));
             chatChannel = bsChat.connect(host, port).sync().channel();
             mainController.chatController.setAlias(alias);
             mainController.chatController.setChannel(chatChannel);

@@ -10,9 +10,17 @@ import javafx.application.Platform;
 public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
 
     private ChatController controller;
+    private String filePath;
 
-    public ChatClientHandler(ChatController controller) {
+    public ChatClientHandler(ChatController controller, String filePath) {
         this.controller = controller;
+        this.filePath = filePath;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ctx.channel().write("CONNECTED::" + filePath + "\r\n");
+        // Tell chat server which file we are editing
     }
 
     @Override
@@ -22,7 +30,6 @@ public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         // Update chat's text area
         Platform.runLater(() -> controller.updateMessages(msg +"\n"));
-        System.err.println(msg);
     }
 
     @Override
