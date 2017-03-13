@@ -24,14 +24,11 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
     static ChannelGroup channels = null;
     // How many operations server has received for each file being edited
     static HashMap<String, Integer> fileStates = new HashMap<>(); // For loads
+    static int clientCount = 0;
 
-    private int opsGenerated; // How many ops this server generated
-    private int opsReceived; // How many ops this server received
 
     public EditorServerHandler(ChannelGroup cg) {
         this.channels = cg;
-        this.opsGenerated = 0;
-        this.opsReceived = 0;
     }
 
     @Override
@@ -50,8 +47,10 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         if (op.type == Operation.CONNECT) {
             // Bind the file being edited to the channel
             ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.content);
-            ctx.channel().writeAndFlush(new Operation(Operation.CONNECT,
-                    String.valueOf(fileStates.getOrDefault(op.content, 0))));
+            Operation response = new Operation(Operation.CONNECT);
+            response.content = String.valueOf(fileStates.getOrDefault(op.content, 0));
+            response.clientId = clientCount++;
+            ctx.channel().writeAndFlush(response);
         } else {
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
             int curr = fileStates.getOrDefault(filePath, 0);

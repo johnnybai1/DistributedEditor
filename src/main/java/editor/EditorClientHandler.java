@@ -32,6 +32,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         System.err.println("FROM SERVER: " + op);
         if (op.type == Operation.CONNECT) {
             controller.opsReceived = Integer.parseInt(op.content);
+            controller.clientId = op.clientId;
         }
         else {
             receiveOperation(op);
