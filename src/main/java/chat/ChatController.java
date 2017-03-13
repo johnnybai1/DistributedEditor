@@ -36,6 +36,10 @@ public class ChatController {
         this.alias = alias;
     }
 
+    public String getAlias() {
+        return alias;
+    }
+
     @FXML
     public void initialize() {
         messages.setDisable(true); // Will be enabled upon connect

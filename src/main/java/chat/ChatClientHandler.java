@@ -19,8 +19,9 @@ public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ctx.channel().write("CONNECTED::" + filePath + "\n");
         // Tell chat server which file we are editing
+        ctx.channel().writeAndFlush("CONNECTED::" + filePath + "\n");
+        ctx.channel().writeAndFlush(controller.getAlias() + " has joined." + "\n");
     }
 
     @Override

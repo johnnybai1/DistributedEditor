@@ -74,7 +74,9 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
                 ctx.channel().write(region);
                 ctx.channel().writeAndFlush("\r\n");
             } else {
-                ctx.channel().writeAndFlush("File not found: " + file + "\r\n");
+                if (file.createNewFile()) {
+                    ctx.channel().writeAndFlush("0\r\n");
+                }
             }
         }
     }
