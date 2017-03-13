@@ -365,7 +365,7 @@ public class Operation implements Serializable {
             cPrime.leftIdx = S.leftIdx;
             sPrime = new Operation(Operation.REPLACE);
             sPrime.content = C.content;
-            sPrime.leftIdx = C.leftIdx;
+            sPrime.leftIdx = S.leftIdx;
             sPrime.rightIdx = C.content.length() + S.rightIdx;
         }
         ops[0] = cPrime;
@@ -395,7 +395,7 @@ public class Operation implements Serializable {
             sPrime.leftIdx = C.leftIdx;
             cPrime = new Operation(Operation.REPLACE);
             cPrime.content = S.content;
-            cPrime.leftIdx = S.leftIdx;
+            cPrime.leftIdx = C.leftIdx;
             cPrime.rightIdx = S.content.length() + C.rightIdx;
         }
         ops[0] = cPrime;

@@ -25,9 +25,12 @@ public class TestOTAlgorithm {
         // a delete is left, b delete is right; partial overlap: works
         // b delete covers a's delete: works
         // b delete is left, a delete is right; partial overlap:
-        a = Operation.deleteOperation(5, 8); // Server
-        b = Operation.deleteOperation(2, 7); // Client
-        test(server, clientA, a, clientB, b);
+//        a = Operation.deleteOperation(5, 8); // Server
+//        b = Operation.deleteOperation(2, 7); // Client
+
+        a = Operation.insertOperation(5, "XXX");
+        b = Operation.deleteOperation(2, 4);
+        test(server, clientA, b, clientB, a);
     }
 
     private static void test(Server server, Client one, Operation a, Client two, Operation b) {
@@ -251,6 +254,7 @@ class Client {
             out.add(cPrime);
         }
         text = TestOTAlgorithm.applyBatched(text, fromServer);
+        System.out.println(name + " is applying: " + fromServer);
         opsRcv += 1;
         return fromServer;
     }
