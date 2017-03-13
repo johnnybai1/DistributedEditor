@@ -303,7 +303,9 @@ public class EditorController {
     }
 
     public void populateEditor(String string) {
-        editor.appendText(string + "\r\n");
+        if (!string.isEmpty()) {
+            editor.appendText(string);
+        }
     }
 
     public void setFilePath(String filePath) {
@@ -328,7 +330,7 @@ public class EditorController {
         int start = op.leftIdx;
         String content = op.content;
         if (content.equals("\r")) {
-            content = "\r\n";
+            content = "\n";
             start -= 1;
         }
         editor.insertText(start, content);
@@ -373,7 +375,7 @@ public class EditorController {
         int start = op.leftIdx;
         String content = op.content;
         if (content.equals("\r")) {
-            content = "\r\n";
+            content = "\n";
             start -= 1;
         }
         editor.insertText(start, content);
@@ -391,9 +393,8 @@ public class EditorController {
     public void save() {
         String fileContent = editor.getText();
         // savereq__path/to/file.txt__length
-        fileChannel.writeAndFlush("savereq__" + filePath + "__" + fileContent.length() + "\r\n");
-        // contents
-        fileChannel.writeAndFlush(fileContent + "\r\n");
+        fileChannel.writeAndFlush("savereq__" + filePath + "__" + fileContent.length() + "\n");
+        fileChannel.writeAndFlush(fileContent + "\n");
     }
 
     public VBox getEditorBox() {

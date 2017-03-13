@@ -32,15 +32,12 @@ public class FileClientHandler extends SimpleChannelInboundHandler<String> {
         }
         else {
             received += msg.length();
-            if (msg.length() == 0 || msg.equals("\r") || msg.equals("\r\n") ||
-                    msg.equals("\n")) {
-                msg = "\r\n";
+            if (received < 0) {
+                msg += "\n";
                 received += 1;
             }
             final String toApply = msg;
-            if (received < 0 && toApply.length() > 0) {
-                Platform.runLater(() -> controller.populateEditor(toApply));
-            }
+            Platform.runLater(() -> controller.populateEditor(toApply));
         }
         if (received == 0) {
             received = 1000;

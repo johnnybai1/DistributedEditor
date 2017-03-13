@@ -28,7 +28,7 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
      * Called when a connection is established.
      */
     public void channelActive(final ChannelHandlerContext ctx) {
-        ctx.writeAndFlush("Welcome to the collaborators' chat\r\n");
+        ctx.writeAndFlush("Welcome to the collaborators' chat\n");
         channels.add(ctx.channel());
     }
 
@@ -38,13 +38,13 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
      */
     public void channelRead0(ChannelHandlerContext ctx, String msg) {
         ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(msg);
-        if (!msg.startsWith("CONNECT::")) {
+        if (!msg.contains("CONNECT::")) {
             // Send received message to all clients
             System.err.println("CHAT RECEIVED: " + msg);
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
             for (Channel c : channels) {
                 if (filePath.equals(c.attr(MainServer.PATHKEY).get())) {
-                    c.writeAndFlush(msg + "\r\n");
+                    c.writeAndFlush(msg + "\n");
                 }
             }
         }

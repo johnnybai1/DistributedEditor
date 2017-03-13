@@ -44,23 +44,17 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
             FileWriter fw = new FileWriter(f, false);
             updates.put(ctx.channel(), fw);
             fileLengths.put(ctx.channel(), -1 * Integer.parseInt(split[2]));
-            System.out.println("Total length of file: " + split[2]);
             return;
         }
         if (ctx.channel().attr(MainServer.SAVEKEY).get()) {
-            System.out.println("Adding: " + msg + msg.length());
             int received = fileLengths.get(ctx.channel()) + msg.length();
-            if (msg.length() == 0|| msg.equals("\r") || msg.equals("\r\n") ||
-                    msg.equals("\n")) {
-                System.out.println("CARRIAGE RETURN");
+            if (received < 0) {
                 received += 1;
-                updates.get(ctx.channel()).write("\r\n");
+                msg += "\n";
             }
-            else {
-                System.out.println("ACTUAL MSG:" + msg);
-                updates.get(ctx.channel()).write(msg);
-            }
+            System.out.println(received + " " + msg);
             fileLengths.replace(ctx.channel(), received);
+            updates.get(ctx.channel()).write(msg);
             System.out.println(received);
             if (received >= 0) {
                 updates.get(ctx.channel()).close();
