@@ -49,6 +49,7 @@ public class ChatController {
             }
         });
         messages.setWrapText(true);
+        messages.setEditable(false);
     }
 
     /**

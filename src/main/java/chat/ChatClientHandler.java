@@ -29,7 +29,9 @@ public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
      */
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         // Update chat's text area
-        Platform.runLater(() -> controller.updateMessages(msg +"\n"));
+        if (!msg.startsWith("CONNECTED::")) {
+            Platform.runLater(() -> controller.updateMessages(msg + "\n"));
+        }
     }
 
     @Override
