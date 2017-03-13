@@ -140,8 +140,8 @@ public class EditorController {
                 else if (editor.getCaretPosition() > 0) {
                     // Backspace pressed, and not at beginning of text
                     op = new Operation(Operation.DELETE);
-                    op.leftIdx = editor.getCaretPosition();
-                    op.rightIdx = op.leftIdx - 1;
+                    op.rightIdx = editor.getCaretPosition();
+                    op.leftIdx = op.rightIdx - 1;
                     send(op);
                     op = null;
                 }
@@ -334,7 +334,7 @@ public class EditorController {
             start -= 1;
         }
         editor.insertText(start, content);
-        editor.positionCaret(caret + 1);
+        editor.positionCaret(caret);
     }
 
     private void doDelete(Operation op) {
@@ -348,11 +348,18 @@ public class EditorController {
     }
 
     private void doReplace(Operation op) {
+        int caret = editor.getCaretPosition();
         int left = op.leftIdx;
         int right = op.rightIdx;
+        if (caret >= left && caret <= right) {
+            caret = left;
+        }
+        else if (right < caret) {
+            caret += op.content.length() - (right - left);
+        }
         editor.deleteText(left, right);
         editor.insertText(left, op.content);
-        editor.positionCaret(left + op.content.length());
+        editor.positionCaret(caret);
     }
 
     /**
@@ -378,15 +385,26 @@ public class EditorController {
             content = "\n";
             start -= 1;
         }
+        if (start < caret) {
+            caret += content.length();
+        }
         editor.insertText(start, content);
-        editor.positionCaret(caret + content.length());
+        editor.positionCaret(caret);
     }
 
     private void doBatchedDelete(Operation op) {
+        int caret = editor.getCaretPosition();
         int left = op.leftIdx;
         int right = op.rightIdx;
+        int deleted = right - left;
+        if (caret >= left && caret <= right) {
+            caret = left;
+        }
+        else if (caret >= left) {
+            caret -= deleted;
+        }
         editor.deleteText(left, right);
-        editor.positionCaret(left);
+        editor.positionCaret(caret);
     }
 
 
