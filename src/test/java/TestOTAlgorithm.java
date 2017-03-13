@@ -8,6 +8,42 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TestOTAlgorithm {
 
     public static void main(String[] args) {
+        testBatchedOT();
+    }
+
+    public static void testBatchedOT() {
+        Client clientA = new Client("Client A");
+        Client clientB = new Client("Client B");
+        Server server = new Server();
+
+        Operation a = Operation.insertOperation(0, "12345");
+        Operation b = Operation.insertOperation(0, "67890");
+        test(server, clientA, a, clientB, b);
+        // a delete is entirely after b's delete: works
+        // b delete is entirely after a's delete: works
+        // a delete covers b's delete: works
+        // a delete is left, b delete is right; partial overlap: works
+        // b delete covers a's delete: works
+        // b delete is left, a delete is right; partial overlap:
+        a = Operation.deleteOperation(5, 8); // Server
+        b = Operation.deleteOperation(2, 7); // Client
+        test(server, clientA, a, clientB, b);
+    }
+
+    private static void test(Server server, Client one, Operation a, Client two, Operation b) {
+        a = one.generate(a);
+        b = two.generate(b);
+        System.out.println(a);
+        System.out.println(b);
+        Operation toSend = server.receive(a);
+        two.receive(toSend);
+        toSend = server.receive(b);
+        one.receive(toSend);
+        System.out.println(one);
+        System.out.println(two);
+    }
+
+    private static void testSingleOT() {
         Client clientA = new Client("Client A");
         Client clientB = new Client("Client B");
         Server server = new Server();
@@ -48,7 +84,6 @@ public class TestOTAlgorithm {
 
         System.out.println(clientA);
         System.out.println(clientB);
-
     }
 
     static String apply(String s, Operation op) {
@@ -78,6 +113,50 @@ public class TestOTAlgorithm {
         return left + right;
     }
 
+
+    /**
+     * Updates the editor text area based on the Operation specified.
+     */
+    public static String applyBatched(String s, Operation op) {
+        if (op.type == Operation.INSERT) {
+            return doBatchedInsert(s, op);
+        }
+        if (op.type == Operation.DELETE) {
+            return doBatchedDelete(s, op);
+        }
+        if (op.type == Operation.REPLACE) {
+            return doReplace(s, op);
+        }
+        return s;
+    }
+
+    private static String doBatchedInsert(String s, Operation op) {
+        int idx = op.leftIdx;
+        String left = s.substring(0, idx);
+        String right = s.substring(idx);
+        return left + op.content + right;
+    }
+
+    private static String doBatchedDelete(String s, Operation op) {
+        int leftIdx = op.leftIdx;
+        int rightIdx = op.rightIdx;
+        String left = "";
+        if (leftIdx > 0) {
+            left = s.substring(0, leftIdx);
+        }
+
+        String right = s.substring(rightIdx);
+        return left + right;
+    }
+
+    private static String doReplace(String s, Operation op) {
+        int leftIdx = op.leftIdx;
+        int rightIdx = op.rightIdx;
+        String left = s.substring(0, leftIdx);
+        String right = s.substring(rightIdx);
+        return left + op.content + right;
+    }
+
 }
 
 class Server {
@@ -94,31 +173,6 @@ class Server {
     // Server receives an operation from the client
     public Operation receive(Operation C) {
         Operation fromClient = new Operation(C);
-        // Discard acknowledged messages
-//        if (!out.isEmpty()) {
-//            for (Operation o : out) {
-//                if (o.opsGenerated < fromClient.opsReceived) {
-//                    out.remove(o);
-//                }
-//            }
-//        }
-//        if (opsRcv > fromClient.opsGenerated + fromClient.opsReceived) {
-//            if (opsRcv > fromClient.opsReceived) {
-//                for (int i = 0; i < out.size(); i++) {
-//                     Transform incoming op with ones in outgoing queue
-//                    Operation S = new Operation(out.remove());
-//                    Operation[] ops = Operation.transform(fromClient, S);
-//                    Operation cPrime = ops[0]; // transformed CLIENT op
-//                    Operation sPrime = ops[1]; // transformed SERVER op
-//                    cPrime.opsReceived = opsRcv;
-//
-//                    fromClient = cPrime;
-//                    out.add(sPrime);
-//                }
-//            }
-//        }
-//        out.add(fromClient);
-//        text = TestOTAlgorithm.apply(text, fromClient);
         opsRcv += 1;
         return fromClient;
     }
@@ -152,7 +206,7 @@ class Client {
 
     public Operation generate(Operation op) {
         // 1. Apply operation locally
-        text = TestOTAlgorithm.apply(text, op);
+        text = TestOTAlgorithm.applyBatched(text, op);
         // 2. Update operation with state info
         op.clientId = id;
         op.opsGenerated = opsGen;
@@ -184,19 +238,19 @@ class Client {
                     fromServer.opsReceived &&
                     C.clientId < fromServer.clientId) {
                 // our Id is lower, we have priority!
-                ops = Operation.transform(fromServer, C);
+                ops = Operation.transformBatch(fromServer, C);
                 cPrime = ops[1];
                 sPrime = ops[0];
             }
             else {
-                ops = Operation.transform(C, fromServer);
+                ops = Operation.transformBatch(C, fromServer);
                 cPrime = ops[0]; // transformed CLIENT op
                 sPrime = ops[1]; // transformed SERVER op
             }
             fromServer = sPrime;
             out.add(cPrime);
         }
-        text = TestOTAlgorithm.apply(text, fromServer);
+        text = TestOTAlgorithm.applyBatched(text, fromServer);
         opsRcv += 1;
         return fromServer;
     }

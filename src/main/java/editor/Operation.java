@@ -270,11 +270,11 @@ public class Operation implements Serializable {
         Operation cPrime = new Operation(C); // c', server executes
         Operation sPrime = new Operation(S); // s', client executes
 
-        int sLeft = S.leftIdx; // Right index for delete
-        int sRight = S.rightIdx; // Left index for delete
+        int sLeft = S.leftIdx; // left index for delete
+        int sRight = S.rightIdx; // right index for delete
         int serverNumDeleted = sRight - sLeft; // Num chars deleted
-        int cLeft = C.leftIdx; // Right index for delete
-        int cRight = C.rightIdx; // Left index for delete
+        int cLeft = C.leftIdx; // left index for delete
+        int cRight = C.rightIdx; // right index for delete
         int clientNumDeleted = cRight - cLeft; // Num chars deleted
 
         // Both server and client deleted the same frame
@@ -302,42 +302,41 @@ public class Operation implements Serializable {
             if (sRight > cRight) {
                 // Server's deletes covers client's delete
 //                System.err.println("CASE5");
-                int numRight = sRight - cRight;
-                int numLeft = cLeft - sLeft;
-                sPrime.rightIdx = sPrime.rightIdx - clientNumDeleted + numRight;
-                sPrime.leftIdx = sPrime.leftIdx - clientNumDeleted + numLeft;
+                sPrime.rightIdx = sPrime.rightIdx - clientNumDeleted;
                 cPrime = new Operation(Operation.NO_OP);
             }
             else {
                 // Client on right, Server on left, partial overlap
 //                System.err.println("CASE3");
+                int numLeft = cLeft - sLeft;
+                int numRight = cRight - sRight;
                 int overlap = sRight - cLeft;
-                sPrime.rightIdx -= overlap;
-                cPrime.rightIdx -= serverNumDeleted;
-                cPrime.leftIdx -= overlap;
+                sPrime.rightIdx = sPrime.leftIdx + numLeft;
+                cPrime.leftIdx = cPrime.leftIdx - serverNumDeleted + overlap;
+                cPrime.rightIdx = cPrime.leftIdx + numRight;
             }
         }
         else if (cLeft <= sLeft) {
             if (cRight > sRight) {
                 // Client's deletes covers server's delete
 //                System.err.println("CASE6");
-                int numRight = cRight - sRight;
-                int numLeft = sLeft - cLeft;
-                cPrime.rightIdx = cPrime.rightIdx - serverNumDeleted + numRight;
-                cPrime.leftIdx = cPrime.leftIdx - serverNumDeleted + numLeft;
+                cPrime.rightIdx = cPrime.rightIdx - serverNumDeleted;
+//                cPrime.leftIdx = cPrime.leftIdx - serverNumDeleted + numLeft;
                 sPrime = new Operation(Operation.NO_OP);
             }
             else {
                 // Server on right, Client on left, partial overlap
 //                System.err.println("CASE4");
+                int numLeft = sLeft - cLeft;
+                int numRight = sRight - cRight;
                 int overlap = cRight - sLeft;
-                cPrime.rightIdx -= overlap;
-                sPrime.rightIdx -= clientNumDeleted;
-                sPrime.leftIdx -= overlap;
+                cPrime.rightIdx = cPrime.leftIdx + numLeft;
+                sPrime.leftIdx = sPrime.leftIdx - clientNumDeleted + overlap;
+                sPrime.rightIdx = sPrime.leftIdx + numRight;
             }
         }
-        ops[0] = sPrime;
-        ops[1] = cPrime;
+        ops[0] = cPrime;
+        ops[1] = sPrime;
         return ops;
     }
 

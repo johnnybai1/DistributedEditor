@@ -42,7 +42,6 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         channels.add(ctx.channel());
     }
 
-
     @Override
     /**
      * Called when an Operation object arrives in the channel.
