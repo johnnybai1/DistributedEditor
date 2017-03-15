@@ -1,4 +1,4 @@
-README.TXT
+Readme.txt
 Johnny Bai 1165291
 Lakshmi Manasa Velaga 1220557
 Ziyi Yang 0733769
@@ -12,7 +12,7 @@ Running the server:
 3. If a port is specified, the server will use three ports (port, port+1, port+2). If a port is not specified, the server will use (9000, 9001, 9002).
 Note: the specified port, or 9000 by default, will be used by the client to connect to the server.
 Running the client: 
-1. To run the client: java -cp DistributedTools.jar MainApp
+1. To run the client: java -cp DistributedTools.jar main.MainApp
 2. Specify server information in the format: HOSTADDRESS:PORT
 3. Specify the file location on the server to edit: this path will be relative to the server root (e.g. "path/to/file.txt" will load up the file at "root/path/to/file.txt" on the server)
 4. Specify an alias to use for the chatroom. If it is left blank, the alias COLLAB followed by client ID will be used.
