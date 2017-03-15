@@ -6,24 +6,24 @@ import editor.Operation;
 public class TransformTest {
 
     private static String apply(String s, Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             return applyInsert(s, op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             return applyDelete(s, op);
         }
         return s;
     }
 
     private static String applyInsert(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = s.substring(0, idx);
         String right = s.substring(idx);
-        return left + op.content + right;
+        return left + op.getContent() + right;
     }
 
     private static String applyDelete(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = "";
         if (idx > 0) {
             left = s.substring(0, idx-1);

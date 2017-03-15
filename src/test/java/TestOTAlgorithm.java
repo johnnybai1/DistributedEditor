@@ -90,24 +90,24 @@ public class TestOTAlgorithm {
     }
 
     static String apply(String s, Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             return applyInsert(s, op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             return applyDelete(s, op);
         }
         return s;
     }
 
     static String applyInsert(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = s.substring(0, idx);
         String right = s.substring(idx);
-        return left + op.content + right;
+        return left + op.getContent() + right;
     }
 
     static String applyDelete(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = "";
         if (idx > 0) {
             left = s.substring(0, idx - 1);
@@ -121,28 +121,28 @@ public class TestOTAlgorithm {
      * Updates the editor text area based on the Operation specified.
      */
     public static String applyBatched(String s, Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             return doBatchedInsert(s, op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             return doBatchedDelete(s, op);
         }
-        if (op.type == Operation.REPLACE) {
+        if (op.getType() == Operation.REPLACE) {
             return doReplace(s, op);
         }
         return s;
     }
 
     private static String doBatchedInsert(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = s.substring(0, idx);
         String right = s.substring(idx);
-        return left + op.content + right;
+        return left + op.getContent() + right;
     }
 
     private static String doBatchedDelete(String s, Operation op) {
-        int leftIdx = op.leftIdx;
-        int rightIdx = op.rightIdx;
+        int leftIdx = op.getLeftIdx();
+        int rightIdx = op.getRightIdx();
         String left = "";
         if (leftIdx > 0) {
             left = s.substring(0, leftIdx);
@@ -153,11 +153,11 @@ public class TestOTAlgorithm {
     }
 
     private static String doReplace(String s, Operation op) {
-        int leftIdx = op.leftIdx;
-        int rightIdx = op.rightIdx;
+        int leftIdx = op.getLeftIdx();
+        int rightIdx = op.getRightIdx();
         String left = s.substring(0, leftIdx);
         String right = s.substring(rightIdx);
-        return left + op.content + right;
+        return left + op.getContent() + right;
     }
 
 }
@@ -211,9 +211,9 @@ class Client {
         // 1. Apply operation locally
         text = TestOTAlgorithm.applyBatched(text, op);
         // 2. Update operation with state info
-        op.clientId = id;
-        op.opsGenerated = opsGen;
-        op.opsReceived = opsRcv;
+        op.setClientId(id);
+        op.setOpsGenerated(opsGen);
+        op.setOpsReceived(opsRcv);
         // 3. Add op to outgoing queue
         out.add(op);
         // 4. Update state
@@ -226,7 +226,7 @@ class Client {
         // Discard acknowledged messages
         if (!out.isEmpty()) {
             for (Operation o : out) {
-                if (o.opsGenerated < fromServer.opsReceived) {
+                if (o.getOpsGenerated() < fromServer.getOpsReceived()) {
                     out.remove(o);
                 }
             }
@@ -237,9 +237,9 @@ class Client {
         for (int i = 0; i < out.size(); i++) {
             // Transform incoming op with ones in outgoing queue
             Operation C = new Operation(out.remove());
-            if (C.opsGenerated + C.opsReceived == fromServer.opsGenerated +
-                    fromServer.opsReceived &&
-                    C.clientId < fromServer.clientId) {
+            if (C.getOpsGenerated() + C.getOpsReceived() ==
+                    fromServer.getOpsGenerated() + fromServer.getOpsReceived()
+                    && C.getClientId()< fromServer.getClientId()) {
                 // our Id is lower, we have priority!
                 ops = Operation.transformBatch(fromServer, C);
                 cPrime = ops[1];
