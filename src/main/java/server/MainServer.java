@@ -78,7 +78,15 @@ public class MainServer {
     }
 
     public static void main(String[] args) throws Exception {
-        MainServer server = new MainServer();
+        MainServer server;
+        if (args.length == 2) {
+            int port = Integer.parseInt(args[0]);
+            // Run on sequential ports
+            server = new MainServer(port, port+1, port+2);
+        }
+        else {
+            server = new MainServer(); // Default ports
+        }
         server.run();
     }
 
