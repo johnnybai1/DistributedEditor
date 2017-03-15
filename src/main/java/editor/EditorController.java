@@ -40,8 +40,8 @@ public class EditorController {
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
     private Operation op; // current operation we are building
-    private int opsGenerated; // How many ops this client generated
-    private int opsReceived; // How many ops this client received
+    private volatile int opsGenerated; // How many ops this client generated
+    private volatile int opsReceived; // How many ops this client received
     private int clientId; // Id of client
     final ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
@@ -200,7 +200,7 @@ public class EditorController {
     /**
      * Sends an Operation object to the EditorServer
      */
-    public void send(Operation op) {
+    public synchronized void send(Operation op) {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
@@ -210,7 +210,7 @@ public class EditorController {
                 op.setOpsGenerated(opsGenerated);
                 op.setOpsReceived(opsReceived);
                 // Send the op
-                ChannelFuture f = channel.writeAndFlush(op);
+                ChannelFuture f = channel.write(op);
                 // Append to queue
                 outgoing.add(op);
                 // Add to opLog
@@ -224,7 +224,11 @@ public class EditorController {
         new Thread(task).start();
     }
 
-    public void populateEditor(String string) {
+    /**
+     * Appends strings onto the editor text area.
+     * @param string
+     */
+    void populateEditor(String string) {
         if (!string.isEmpty()) {
             editor.appendText(string);
         }
@@ -269,7 +273,52 @@ public class EditorController {
         }
     }
 
-    private void doReplace(Operation op) {
+    /**
+     * Updates the editor text area based on the Operation specified.
+     */
+    synchronized void applyBatched(Operation op) {
+        if (op.getType() == Operation.INSERT) {
+            doBatchedInsert(op);
+        }
+        if (op.getType() == Operation.DELETE) {
+            doBatchedDelete(op);
+        }
+        if (op.getType() == Operation.REPLACE) {
+            doReplace(op);
+        }
+    }
+
+    private synchronized void doBatchedInsert(Operation op) {
+        int caret = editor.getCaretPosition();
+        int start = op.getLeftIdx();
+        String content = op.getContent();
+        if (content.equals("\r")) {
+            content = "\n";
+            start -= 1;
+        }
+        if (start < caret) {
+            caret += content.length();
+        }
+        editor.insertText(start, content);
+        editor.positionCaret(caret);
+    }
+
+    private synchronized void doBatchedDelete(Operation op) {
+        int caret = editor.getCaretPosition();
+        int left = op.getLeftIdx();
+        int right = op.getRightIdx();
+        int deleted = right - left;
+        if (caret >= left && caret <= right) {
+            caret = left;
+        }
+        else if (caret >= left) {
+            caret -= deleted;
+        }
+        editor.deleteText(left, right);
+        editor.positionCaret(caret);
+    }
+
+    private synchronized void doReplace(Operation op) {
         int caret = editor.getCaretPosition();
         int left = op.getLeftIdx();
         int right = op.getRightIdx();
@@ -285,51 +334,8 @@ public class EditorController {
     }
 
     /**
-     * Updates the editor text area based on the Operation specified.
+     * Sends a save request to the file server.
      */
-    public void applyBatched(Operation op) {
-        if (op.getType() == Operation.INSERT) {
-            doBatchedInsert(op);
-        }
-        if (op.getType() == Operation.DELETE) {
-            doBatchedDelete(op);
-        }
-        if (op.getType() == Operation.REPLACE) {
-            doReplace(op);
-        }
-    }
-
-    private void doBatchedInsert(Operation op) {
-        int caret = editor.getCaretPosition();
-        int start = op.getLeftIdx();
-        String content = op.getContent();
-        if (content.equals("\r")) {
-            content = "\n";
-            start -= 1;
-        }
-        if (start < caret) {
-            caret += content.length();
-        }
-        editor.insertText(start, content);
-        editor.positionCaret(caret);
-    }
-
-    private void doBatchedDelete(Operation op) {
-        int caret = editor.getCaretPosition();
-        int left = op.getLeftIdx();
-        int right = op.getRightIdx();
-        int deleted = right - left;
-        if (caret >= left && caret <= right) {
-            caret = left;
-        }
-        else if (caret >= left) {
-            caret -= deleted;
-        }
-        editor.deleteText(left, right);
-        editor.positionCaret(caret);
-    }
-
-
     public void save() {
         String fileContent = editor.getText();
         // savereq__path/to/file.txt__length

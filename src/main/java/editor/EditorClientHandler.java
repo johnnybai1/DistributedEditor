@@ -33,9 +33,12 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                if (!controller.editing.get()) {
-                    ctx.channel().flush();
-                }
+                Platform.runLater(() -> {
+                    if (!controller.editing.get()) {
+                        ctx.channel().flush();
+                        System.out.println("FLUSHING");
+                    }
+                });
             }
         }));
         timeline.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
@@ -52,7 +55,9 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
             controller.setClientId(op.getClientId());
         } else {
             Platform.runLater(() -> {
-                receiveOperation(op);
+                synchronized(controller.outgoing) {
+                    receiveOperation(op);
+                }
             });
         }
     }
