@@ -47,12 +47,12 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
      * Called when an Operation object arrives in the channel.
      */
     protected void channelRead0(ChannelHandlerContext ctx, Operation op) {
-        if (op.type == Operation.CONNECT) {
+        if (op.getType() == Operation.CONNECT) {
             // Bind the file being edited to the channel
-            ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.content);
+            ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(op.getContent());
             Operation response = new Operation(Operation.CONNECT);
-            response.content = String.valueOf(fileStates.getOrDefault(op.content, 0));
-            response.clientId = clientCount++;
+            response.setContent(String.valueOf(fileStates.getOrDefault(op.getClientId(), 0)));
+            response.setClientId(clientCount++);
             ctx.channel().writeAndFlush(response);
         } else {
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
@@ -80,21 +80,21 @@ public class EditorServerHandler extends SimpleChannelInboundHandler<Operation> 
         // Discard acknowledged messages
         if (!outgoing.isEmpty()) {
             for (Operation localOp : outgoing) {
-                if (localOp.opsGenerated < fromClient.opsReceived) {
+                if (localOp.getOpsGenerated() < fromClient.getOpsReceived()) {
                     if (outgoing.remove(localOp)) {
                         System.out.println("Removed: " + localOp);
                     }
                 }
             }
         }
-        if (opsReceived > fromClient.opsGenerated + fromClient.opsReceived) {
+        if (opsReceived > fromClient.getOpsGenerated() + fromClient.getOpsReceived()) {
             for (int i = 0; i < outgoing.size(); i++) {
 //                 Transform incoming op with ones in outgoing queue
                 Operation S = new Operation(outgoing.remove()); // Copy the op
                 Operation[] transformed = Operation.transform(fromClient, S);
                 Operation cPrime = transformed[0];
                 Operation sPrime = transformed[1];
-                cPrime.opsReceived = opsReceived;
+                cPrime.setOpsReceived(opsReceived);
                 fromClient = cPrime;
                 outgoing.add(sPrime);
             }

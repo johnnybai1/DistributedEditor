@@ -47,9 +47,9 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      * Called when an Operation object arrives in this channel.
      */
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
-        if (op.type == Operation.CONNECT) {
-            controller.opsReceived = Integer.parseInt(op.content);
-            controller.clientId = op.clientId;
+        if (op.getType() == Operation.CONNECT) {
+            controller.setOpsReceived(Integer.parseInt(op.getContent()));
+            controller.setClientId(op.getClientId());
         } else {
             Platform.runLater(() -> {
                 receiveOperation(op);
@@ -63,7 +63,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         // Discard acknowledged messages
         if (!outgoing.isEmpty()) {
             for (Operation o : outgoing) {
-                if (o.opsGenerated < fromServer.opsReceived) {
+                if (o.getOpsGenerated() < fromServer.getOpsReceived()) {
                     outgoing.remove(o);
                 }
             }
@@ -74,9 +74,10 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
         for (int i = 0; i < outgoing.size(); i++) {
             // Transform incoming op with ones in outgoing queue
             Operation C = new Operation(outgoing.remove());
-            if (C.opsGenerated + C.opsReceived == fromServer.opsGenerated +
-                    fromServer.opsReceived &&
-                    C.clientId < fromServer.clientId) {
+            if (C.getOpsGenerated() + C.getOpsReceived() ==
+                    fromServer.getOpsGenerated() +
+                    fromServer.getOpsReceived() &&
+                    C.getClientId() < fromServer.getClientId()) {
                 // our Id is lower, we have priority!
                 ops = Operation.transformBatch(fromServer, C);
                 cPrime = ops[1];
@@ -93,7 +94,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
 
         Platform.runLater(() -> {
             controller.applyBatched(toApply);
-            controller.opsReceived += 1;
+            controller.setOpsReceived(controller.getOpsReceived() + 1);
         });
     }
 

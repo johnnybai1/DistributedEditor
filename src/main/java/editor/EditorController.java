@@ -39,10 +39,10 @@ public class EditorController {
 
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
-    Operation op; // current operation we are building
-    int opsGenerated; // How many ops this client generated
-    int opsReceived; // How many ops this client received
-    int clientId; // Id of client
+    private Operation op; // current operation we are building
+    private int opsGenerated; // How many ops this client generated
+    private int opsReceived; // How many ops this client received
+    private int clientId; // Id of client
     final ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     private String filePath; // file we are modifying
@@ -66,6 +66,30 @@ public class EditorController {
         clipboard = tk.getSystemClipboard();
         selected = null;
         selectedRange = null;
+    }
+
+    public int getOpsGenerated() {
+        return opsGenerated;
+    }
+
+    public void setOpsGenerated(int opsGenerated) {
+        this.opsGenerated = opsGenerated;
+    }
+
+    public int getOpsReceived() {
+        return opsReceived;
+    }
+
+    public void setOpsReceived(int opsReceived) {
+        this.opsReceived = opsReceived;
+    }
+
+    public int getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(int clientId) {
+        this.clientId = clientId;
     }
 
     public void setMainController(MainController mainController) {
@@ -97,8 +121,8 @@ public class EditorController {
             String c = event.getCharacter(); // what we typed
             if (!c.isEmpty() && !commandPressed) {
                 op = new Operation(Operation.INSERT); // insert operation
-                op.leftIdx = editor.getCaretPosition(); // leftIdx = cursor pos
-                op.content = c; // content is what we typed
+                op.setLeftIdx(editor.getCaretPosition()); // leftIdx = cursor pos
+                op.setContent(c);
                 send(op);
                 op = null;
             }
@@ -111,8 +135,8 @@ public class EditorController {
                         String copied = (String) clipboard.getData(DataFlavor.stringFlavor);
                         // since we do not consume this, we adjust the insert position
                         // since caret position is AFTER the text has been pasted
-                        op.leftIdx = editor.getCaretPosition() - copied.length();
-                        op.content = copied;
+                        op.setLeftIdx(editor.getCaretPosition() - copied.length());
+                        op.setContent(copied);
                         send(op);
                         op = null;
                     }
@@ -138,16 +162,16 @@ public class EditorController {
             if (event.getCode() == KeyCode.BACK_SPACE) {
                 if (!selected.isEmpty()) {
                     op = new Operation(Operation.DELETE);
-                    op.leftIdx = selectedRange.getStart();
-                    op.rightIdx = selectedRange.getEnd();
+                    op.setLeftIdx(selectedRange.getStart());
+                    op.setRightIdx(selectedRange.getEnd());
                     send(op);
                     op = null;
                 }
                 else if (editor.getCaretPosition() > 0) {
                     // Backspace pressed, and not at beginning of text
                     op = new Operation(Operation.DELETE);
-                    op.rightIdx = editor.getCaretPosition();
-                    op.leftIdx = op.rightIdx - 1;
+                    op.setRightIdx(editor.getCaretPosition());
+                    op.setLeftIdx(op.getRightIdx()-1);
                     send(op);
                     op = null;
                 }
@@ -172,122 +196,19 @@ public class EditorController {
 
     }
 
-    @SuppressWarnings("restriction")
-	@FXML
+    @FXML
     /**
-     * If we want to batch multiple key strokes into a single operation
+     * Sends an Operation object to the EditorServer
      */
-    public void initializeBatchedVersion() {
-    	
-    	// Timer to check if user is idle, runs every IDLE_CHECK_TIME seconds
-		Timeline idleCheck = new Timeline(new KeyFrame(Duration.seconds(IDLE_CHECK_TIME), new EventHandler<ActionEvent>() {
-			Operation previousOp = op; // what previous operation was IDLE_CHECK_TIME seconds ago
-    	    @Override
-    	    public void handle(ActionEvent event) {
-    	    	if (op != null)
-    	    	{
-    	    		// check if previous operation equal to current operation
-    	    		if (previousOp != null && previousOp.equals(op))
-    	    		{
-    	    			// user is idle
-                        op.rightIdx = editor.getCaretPosition();
-                        System.out.println("User is idle, adding: " + op);
-                        // Push to logs
-                        opLog.push(op);
-                        // Send to server
-                        send(op);
-                        // Make current op null again
-                        op = null;    	    		
-                    }
-    	    	}
-    	    	previousOp = op; // update previous operation to current operation
-    	    }
-    	}));
-    	idleCheck.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
-    	idleCheck.play();
-    	
-        editor.setWrapText(true); // Will be enabled upon connect
-        editor.setDisable(true); // Will be enabled upon connect
-
-        // Prints out caret position when clicking
-        editor.setOnMouseClicked(event -> {
-            System.out.println(editor.getCaretPosition());
-        });
-
-        editor.setOnKeyTyped(event -> {
-            // KeyTyped refers to keys pressed that can be displayed in the TextArea
-            String c = event.getCharacter(); // what we typed
-            if (!c.isEmpty()) {
-                if (op == null) {
-                    // Create a new operation since none existed before
-                    op = new Operation(Operation.INSERT);
-                    // Set start position to where caret (cursor) currently is
-                    op.leftIdx = editor.getCaretPosition();
-                }
-                // We had a series of deletes, but now we have an insert
-                if (op.type == Operation.DELETE) {
-                    send(op); // Send to server
-                    op = new Operation(Operation.INSERT); // Create new Operation for these inserts
-                    op.leftIdx = editor.getCaretPosition(); // Set start position
-                }
-                op.content += c; // Append characters to track changes
-                if (c.equals("\r") || c.equals(" ") ||
-                        c.equals(".")) {
-                    // Enter, space, or period triggers a push.
-                    // Final Position may not be needed for inserts, since we
-                    // can simply get op.content.length() for inserts.
-                    send(op); // Send to server
-                    op = null; // Make current op null again
-                }
-            }
-        });
-
-        // Pushes an existing op when clicking
-        editor.setOnMouseClicked(event -> {
-            if (op != null) {
-                send(op);
-                op = null;
-            }
-            System.out.println(editor.getCaretPosition());
-        });
-
-        editor.setOnKeyPressed(event -> {
-            // KeyPressed are keys that would not be displayed on the TextArea
-            // For special keys, e.g. backspace, command, shift, etc.
-            // Can use this to introduce shortcuts (e.g. COMMAND+S to save)
-            if (event.getCode() == KeyCode.BACK_SPACE && editor.getCaretPosition() > 0) {
-                // Backspace pressed, and not at beginning of text
-                if (op == null) {
-                    // Create a new operation for deletions
-                    op = new Operation(Operation.DELETE);
-                    op.leftIdx = editor.getCaretPosition();
-                    op.rightIdx = op.leftIdx;
-                }
-                if (op.type == Operation.INSERT) {
-                    // If we switched from inserting to deleting
-                    send(op);
-                    op = new Operation(Operation.DELETE);
-                    op.leftIdx = editor.getCaretPosition();
-                    op.rightIdx = op.leftIdx;
-                }
-                if (op.type == Operation.DELETE) {
-                    // Decrement our final position for a series of deletions
-                    op.rightIdx--;
-                }
-            }
-        });
-    }
-
-    public void generate(Operation op) {
+    public void send(Operation op) {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                applyBatched(op);
-                // Set clientId into op
-                op.clientId = clientId;
+            	// Set clientId into op
+                op.setClientId(clientId);
                 // Pack this client's state info into op
-                op.opsGenerated = opsGenerated;
-                op.opsReceived = opsReceived;
+                op.setOpsGenerated(opsGenerated);
+                op.setOpsReceived(opsReceived);
                 // Send the op
                 ChannelFuture f = channel.writeAndFlush(op);
                 // Append to queue
@@ -300,40 +221,7 @@ public class EditorController {
                 return null;
             }
         };
-        Platform.runLater(task);
-    }
-
-    @FXML
-    /**
-     * Sends an Operation object to the EditorServer
-     */
-    public void send(Operation op) {
-        Task<Void> task = new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-            	// Set clientId into op
-            	op.clientId = clientId;
-                // Pack this client's state info into op
-                op.opsGenerated = opsGenerated;
-                op.opsReceived = opsReceived;
-                // Send the op
-                ChannelFuture f = channel.write(op);
-                // Append to queue
-                outgoing.add(op);
-                // Add to opLog
-                opLog.push(op);
-                // Increment this client's state info
-                opsGenerated++;
-                f.sync();
-                return null;
-            }
-            @Override
-            protected void succeeded() {
-                System.out.println("SENT OPERATION TO SERVER: " + op);
-            }
-        };
         new Thread(task).start();
-//        Platform.runLater(task);
     }
 
     public void populateEditor(String string) {
@@ -351,18 +239,18 @@ public class EditorController {
      * changes
      */
     public void apply(Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             doInsert(op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             doDelete(op);
         }
     }
 
     private void doInsert(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.leftIdx;
-        String content = op.content;
+        int start = op.getLeftIdx();
+        String content = op.getContent();
         if (content.equals("\r")) {
             content = "\n";
             start -= 1;
@@ -373,7 +261,7 @@ public class EditorController {
 
     private void doDelete(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.leftIdx;
+        int start = op.getLeftIdx();
         editor.deleteText(start-1, start);
         if (start <= caret) {
             // Deleted prior to our caret position
@@ -383,16 +271,16 @@ public class EditorController {
 
     private void doReplace(Operation op) {
         int caret = editor.getCaretPosition();
-        int left = op.leftIdx;
-        int right = op.rightIdx;
+        int left = op.getLeftIdx();
+        int right = op.getRightIdx();
         if (caret >= left && caret <= right) {
             caret = left;
         }
         else if (right < caret) {
-            caret += op.content.length() - (right - left);
+            caret += op.getContent().length() - (right - left);
         }
         editor.deleteText(left, right);
-        editor.insertText(left, op.content);
+        editor.insertText(left, op.getContent());
         editor.positionCaret(caret);
     }
 
@@ -400,21 +288,21 @@ public class EditorController {
      * Updates the editor text area based on the Operation specified.
      */
     public void applyBatched(Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             doBatchedInsert(op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             doBatchedDelete(op);
         }
-        if (op.type == Operation.REPLACE) {
+        if (op.getType() == Operation.REPLACE) {
             doReplace(op);
         }
     }
 
     private void doBatchedInsert(Operation op) {
         int caret = editor.getCaretPosition();
-        int start = op.leftIdx;
-        String content = op.content;
+        int start = op.getLeftIdx();
+        String content = op.getContent();
         if (content.equals("\r")) {
             content = "\n";
             start -= 1;
@@ -428,8 +316,8 @@ public class EditorController {
 
     private void doBatchedDelete(Operation op) {
         int caret = editor.getCaretPosition();
-        int left = op.leftIdx;
-        int right = op.rightIdx;
+        int left = op.getLeftIdx();
+        int right = op.getRightIdx();
         int deleted = right - left;
         if (caret >= left && caret <= right) {
             caret = left;

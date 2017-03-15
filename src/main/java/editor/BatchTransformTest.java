@@ -10,13 +10,13 @@ public class BatchTransformTest {
      * Applies an operation to a string and returns the modified string
      */
     private static String applyBatch(String s, Operation op) {
-        if (op.type == Operation.INSERT) {
+        if (op.getType() == Operation.INSERT) {
             return applyBatchInsert(s, op);
         }
-        if (op.type == Operation.DELETE) {
+        if (op.getType() == Operation.DELETE) {
             return applyBatchDelete(s, op);
         }
-        if (op.type == Operation.NO_OP) {
+        if (op.getType() == Operation.NO_OP) {
             return s;
         }
         return s;
@@ -26,10 +26,10 @@ public class BatchTransformTest {
      * Performs an insert operation on the string.
      */
     private static String applyBatchInsert(String s, Operation op) {
-        int idx = op.leftIdx;
+        int idx = op.getLeftIdx();
         String left = s.substring(0, idx);
         String right = s.substring(idx);
-        return left + op.content + right;
+        return left + op.getContent() + right;
     }
 
     /**
@@ -37,10 +37,10 @@ public class BatchTransformTest {
      */
     private static String applyBatchDelete(String s, Operation op) {
         String left = "";
-        if (op.rightIdx > 0) {
-            left = s.substring(0, op.rightIdx);
+        if (op.getRightIdx() > 0) {
+            left = s.substring(0, op.getRightIdx());
         }
-        String right = s.substring(op.leftIdx);
+        String right = s.substring(op.getLeftIdx());
         return left + right;
     }
 
@@ -160,15 +160,15 @@ public class BatchTransformTest {
     public static void main(String[] args) {
         String s = "12345";
         Operation op = new Operation(Operation.INSERT);
-        op.leftIdx = 3;
-        op.content = "ADDED";
+        op.setLeftIdx(3);
+        op.setContent("ADDED");
         String mod = applyBatchInsert(s, op);
         System.out.println(mod);
 
         s = "012345";
         op = new Operation(Operation.DELETE);
-        op.leftIdx = 3;
-        op.rightIdx = 2;
+        op.setLeftIdx(2);
+        op.setRightIdx(3);
         mod = applyBatchDelete(s, op);
         System.out.println(mod);
 
