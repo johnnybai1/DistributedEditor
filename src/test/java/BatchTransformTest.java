@@ -1,5 +1,4 @@
-package editor;
-
+import editor.Operation;
 
 /**
  * Tests batched (more than one character edits) transformations.

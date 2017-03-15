@@ -38,7 +38,7 @@ public class MainController {
     @FXML public BorderPane root;
 
     private Timeline timeline; // For our robot
-    private static int FREQUENCY = 100; // ms
+    private static int FREQUENCY = 300; // ms
     private FXRobot robot;
     private static String[] sequence = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
 
