@@ -29,17 +29,12 @@ public class EditorController {
     @FXML VBox editorBox; // Container holding the editor TextArea
     @FXML volatile TextArea editor; // To display and edit contents of a text file
 
-    private static final int IDLE_CHECK_TIME = 3; // Timeout to auto push op
-    
-    private static int clientCounter = 0; // Keeps track of how many clients
-
     private MainController mainController; // To communicate with other controllers
     private Channel channel; // Connection to server
     private Channel fileChannel; // Connection to file server
 
     // Below are state info required for OT
     private Stack<Operation> opLog; // Useful for REDO functionality
-    private Operation op; // current operation we are building
     private volatile int opsGenerated; // How many ops this client generated
     private volatile int opsReceived; // How many ops this client received
     private int clientId; // Id of client
@@ -59,9 +54,7 @@ public class EditorController {
         this.opsReceived = 0;
         outgoing = new ConcurrentLinkedQueue<>();
         opLog = new Stack<>();
-        op = null;
         commandPressed = false;
-        this.clientId = clientCounter++;
         Toolkit tk = Toolkit.getDefaultToolkit();
         clipboard = tk.getSystemClipboard();
         selected = null;
@@ -120,17 +113,16 @@ public class EditorController {
             editing.set(true);
             String c = event.getCharacter(); // what we typed
             if (!c.isEmpty() && !commandPressed) {
-                op = new Operation(Operation.INSERT); // insert operation
+                Operation op = new Operation(Operation.INSERT); // insert operation
                 op.setLeftIdx(editor.getCaretPosition()); // leftIdx = cursor pos
                 op.setContent(c);
                 send(op);
-                op = null;
             }
             if (commandPressed) {
                 if (c.equals("v")) {
                     // Paste
                     try {
-                        op = new Operation(Operation.INSERT);
+                        Operation op = new Operation(Operation.INSERT);
                         // Get from System's clipboard
                         String copied = (String) clipboard.getData(DataFlavor.stringFlavor);
                         // since we do not consume this, we adjust the insert position
@@ -138,7 +130,6 @@ public class EditorController {
                         op.setLeftIdx(editor.getCaretPosition() - copied.length());
                         op.setContent(copied);
                         send(op);
-                        op = null;
                     }
                     catch (Exception e) {
                         System.out.println(e);
@@ -161,19 +152,17 @@ public class EditorController {
             selectedRange = editor.getSelection();
             if (event.getCode() == KeyCode.BACK_SPACE) {
                 if (!selected.isEmpty()) {
-                    op = new Operation(Operation.DELETE);
+                    Operation op = new Operation(Operation.DELETE);
                     op.setLeftIdx(selectedRange.getStart());
                     op.setRightIdx(selectedRange.getEnd());
                     send(op);
-                    op = null;
                 }
                 else if (editor.getCaretPosition() > 0) {
                     // Backspace pressed, and not at beginning of text
-                    op = new Operation(Operation.DELETE);
+                    Operation op = new Operation(Operation.DELETE);
                     op.setRightIdx(editor.getCaretPosition());
                     op.setLeftIdx(op.getRightIdx()-1);
                     send(op);
-                    op = null;
                 }
             }
             if (event.getCode() == KeyCode.COMMAND) {

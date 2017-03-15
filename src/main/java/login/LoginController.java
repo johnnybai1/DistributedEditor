@@ -56,8 +56,6 @@ public class LoginController {
 
     @FXML
     public void initialize() {
-        conField.setText("localhost:9000"); // default
-        fileField.setText("TEST.txt"); // default
         loginBox.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 connect();
@@ -72,43 +70,46 @@ public class LoginController {
      */
     public void connect() {
         extractFields();
-        chatGroup = new NioEventLoopGroup();
-        editorGroup = new NioEventLoopGroup();
-        fileGroup = new NioEventLoopGroup();
-        try {
-            // Establish connection to MainServer
-            Bootstrap bsChat = new Bootstrap();
-            bsChat
-                    .group(chatGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChatClientInitializer(mainController.chatController, filePath));
-            chatChannel = bsChat.connect(host, port).sync().channel();
-            mainController.chatController.setAlias(alias);
-            mainController.chatController.setChannel(chatChannel);
+        if (!host.isEmpty() && port > 0) {
+            chatGroup = new NioEventLoopGroup();
+            editorGroup = new NioEventLoopGroup();
+            fileGroup = new NioEventLoopGroup();
+            try {
+                // Establish connection to MainServer
+                Bootstrap bsChat = new Bootstrap();
+                bsChat
+                        .group(chatGroup)
+                        .channel(NioSocketChannel.class)
+                        .handler(new ChatClientInitializer(mainController.chatController, filePath));
+                chatChannel = bsChat.connect(host, port).sync().channel();
+                if (alias.isEmpty()) {
+                    alias = "COLLAB" + mainController.editorController.getClientId();
+                }
+                mainController.chatController.setAlias(alias);
+                mainController.chatController.setChannel(chatChannel);
 
-            // Establish connection to EditorServer
-            Bootstrap bsEditor = new Bootstrap();
-            bsEditor
-                    .group(editorGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new EditorClientInitializer(mainController.editorController, filePath));
-            editorChannel = bsEditor.connect(host, port+1).sync().channel();
-            mainController.editorController.setChannel(editorChannel);
+                // Establish connection to EditorServer
+                Bootstrap bsEditor = new Bootstrap();
+                bsEditor
+                        .group(editorGroup)
+                        .channel(NioSocketChannel.class)
+                        .handler(new EditorClientInitializer(mainController.editorController, filePath));
+                editorChannel = bsEditor.connect(host, port + 1).sync().channel();
+                mainController.editorController.setChannel(editorChannel);
 
-            // Establish connection to FileServer
-            Bootstrap bsFile = new Bootstrap();
-            bsFile
-                    .group(fileGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new FileClientInitializer(mainController.editorController, filePath));
-            fileChannel = bsFile.connect(host, port+2).sync().channel();
-            mainController.editorController.setFileChannel(fileChannel);
+                // Establish connection to FileServer
+                Bootstrap bsFile = new Bootstrap();
+                bsFile
+                        .group(fileGroup)
+                        .channel(NioSocketChannel.class)
+                        .handler(new FileClientInitializer(mainController.editorController, filePath));
+                fileChannel = bsFile.connect(host, port + 2).sync().channel();
+                mainController.editorController.setFileChannel(fileChannel);
 
-            connectPressed.set(true); // Connection established
-
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+                connectPressed.set(true); // Connection established
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
