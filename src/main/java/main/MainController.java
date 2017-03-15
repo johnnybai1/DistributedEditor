@@ -37,8 +37,10 @@ public class MainController {
 
     @FXML public BorderPane root;
 
-    Timeline idleCheck;
-    int IDLE_CHECK_TIME = 700;
+    private Timeline timeline; // For our robot
+    private static int FREQUENCY = 100; // ms
+    private FXRobot robot;
+    private static String[] sequence = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
 
     public MainController() {
     }
@@ -68,22 +70,40 @@ public class MainController {
         editorController.save();
     }
 
+    @FXML
     public void robotStart() {
-        FXRobot robot = FXRobotFactory.createRobot(root.getScene());
-        idleCheck = new Timeline(new KeyFrame(Duration.millis(IDLE_CHECK_TIME), new EventHandler<ActionEvent>() {
+        robot = FXRobotFactory.createRobot(root.getScene());
+        timeline = new Timeline(new KeyFrame(Duration.millis(FREQUENCY), new EventHandler<ActionEvent>() {
+            int track = 0;
             @Override
             public void handle(ActionEvent event) {
-                robot.keyType(KeyCode.C, "C");
+                doType(robot, sequence[track % 10]);
+                robot.keyRelease(KeyCode.getKeyCode(sequence[track % 10]));
+                track += 1;
             }
         }));
-        idleCheck.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
-        idleCheck.play();
+        timeline.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
+        timeline.play();
     }
 
     @FXML
     public void robotStop() {
-        idleCheck.stop();
-        idleCheck.pause();
+        timeline.stop();
+    }
+
+    private void doType(FXRobot robot, String character) {
+        switch (character) {
+            case "0": robot.keyType(KeyCode.DIGIT0, character); break;
+            case "1": robot.keyType(KeyCode.DIGIT1, character); break;
+            case "2": robot.keyType(KeyCode.DIGIT2, character); break;
+            case "3": robot.keyType(KeyCode.DIGIT3, character); break;
+            case "4": robot.keyType(KeyCode.DIGIT4, character); break;
+            case "5": robot.keyType(KeyCode.DIGIT5, character); break;
+            case "6": robot.keyType(KeyCode.DIGIT6, character); break;
+            case "7": robot.keyType(KeyCode.DIGIT7, character); break;
+            case "8": robot.keyType(KeyCode.DIGIT8, character); break;
+            case "9": robot.keyType(KeyCode.DIGIT9, character); break;
+        }
     }
 
 }

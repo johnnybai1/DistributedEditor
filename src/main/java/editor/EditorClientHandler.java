@@ -2,9 +2,17 @@ package editor;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.util.Duration;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Handles incoming Operation objects from the server.
@@ -22,6 +30,16 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ctx.writeAndFlush(new Operation(Operation.CONNECT, filePath));
+        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                if (!controller.editing.get()) {
+                    ctx.channel().flush();
+                }
+            }
+        }));
+        timeline.setCycleCount(Timeline.INDEFINITE); // keep looping while application is open
+        timeline.play();
     }
 
     @Override
@@ -29,13 +47,13 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
      * Called when an Operation object arrives in this channel.
      */
     public void channelRead0(ChannelHandlerContext ctx, Operation op) throws Exception {
-        System.err.println("FROM SERVER: " + op);
         if (op.type == Operation.CONNECT) {
             controller.opsReceived = Integer.parseInt(op.content);
             controller.clientId = op.clientId;
-        }
-        else {
-            receiveOperation(op);
+        } else {
+            Platform.runLater(() -> {
+                receiveOperation(op);
+            });
         }
     }
 
@@ -63,8 +81,7 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
                 ops = Operation.transformBatch(fromServer, C);
                 cPrime = ops[1];
                 sPrime = ops[0];
-            }
-            else {
+            } else {
                 ops = Operation.transformBatch(C, fromServer);
                 cPrime = ops[0]; // transformed CLIENT op
                 sPrime = ops[1]; // transformed SERVER op

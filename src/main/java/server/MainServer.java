@@ -1,6 +1,5 @@
 package server;
 
-import editor.Operation;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -12,7 +11,6 @@ import io.netty.util.AttributeKey;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**

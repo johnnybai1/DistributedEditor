@@ -37,7 +37,6 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
      */
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws IOException {
         if (msg.startsWith("savereq__")) {
-            System.out.println(msg);
             ctx.channel().attr(MainServer.SAVEKEY).set(true);
             String[] split = msg.split("__");
             File f = new File(MainServer.root + split[1]);
@@ -52,10 +51,8 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
                 received += 1;
                 msg += "\n";
             }
-            System.out.println(received + " " + msg);
             fileLengths.replace(ctx.channel(), received);
             updates.get(ctx.channel()).write(msg);
-            System.out.println(received);
             if (received >= 0) {
                 updates.get(ctx.channel()).close();
                 updates.remove(ctx.channel());

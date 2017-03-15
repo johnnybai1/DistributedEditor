@@ -40,7 +40,6 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.channel().attr(MainServer.PATHKEY).setIfAbsent(msg);
         if (!msg.contains("CONNECT::")) {
             // Send received message to all clients
-            System.err.println("CHAT RECEIVED: " + msg);
             String filePath = ctx.channel().attr(MainServer.PATHKEY).get();
             for (Channel c : channels) {
                 if (filePath.equals(c.attr(MainServer.PATHKEY).get())) {

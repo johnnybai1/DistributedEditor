@@ -2,6 +2,7 @@ package editor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 
@@ -21,11 +22,12 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.IOException;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EditorController {
 
     @FXML VBox editorBox; // Container holding the editor TextArea
-    @FXML TextArea editor; // To display and edit contents of a text file
+    @FXML volatile TextArea editor; // To display and edit contents of a text file
 
     private static final int IDLE_CHECK_TIME = 3; // Timeout to auto push op
     
@@ -41,12 +43,14 @@ public class EditorController {
     int opsGenerated; // How many ops this client generated
     int opsReceived; // How many ops this client received
     int clientId; // Id of client
-    ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
+    final ConcurrentLinkedQueue<Operation> outgoing; // queue of outgoing ops
 
     private String filePath; // file we are modifying
     private String selected; // text selection
     private IndexRange selectedRange; // range on text selection
     private boolean commandPressed; // toggled when command key is pressed/released
+
+    AtomicBoolean editing = new AtomicBoolean(false);
 
     private Clipboard clipboard;
 
@@ -86,8 +90,10 @@ public class EditorController {
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
 
+
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
+            editing.set(true);
             String c = event.getCharacter(); // what we typed
             if (!c.isEmpty() && !commandPressed) {
                 op = new Operation(Operation.INSERT); // insert operation
@@ -149,9 +155,11 @@ public class EditorController {
             if (event.getCode() == KeyCode.COMMAND) {
                 commandPressed = true;
             }
+            else editing.set(true);
         });
 
         editor.setOnKeyReleased(event -> {
+            editing.set(false);
             if (event.getCode() == KeyCode.COMMAND) {
                 commandPressed = false;
             }
@@ -270,6 +278,31 @@ public class EditorController {
         });
     }
 
+    public void generate(Operation op) {
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                applyBatched(op);
+                // Set clientId into op
+                op.clientId = clientId;
+                // Pack this client's state info into op
+                op.opsGenerated = opsGenerated;
+                op.opsReceived = opsReceived;
+                // Send the op
+                ChannelFuture f = channel.writeAndFlush(op);
+                // Append to queue
+                outgoing.add(op);
+                // Add to opLog
+                opLog.push(op);
+                // Increment this client's state info
+                opsGenerated++;
+                f.sync();
+                return null;
+            }
+        };
+        Platform.runLater(task);
+    }
+
     @FXML
     /**
      * Sends an Operation object to the EditorServer
@@ -284,7 +317,7 @@ public class EditorController {
                 op.opsGenerated = opsGenerated;
                 op.opsReceived = opsReceived;
                 // Send the op
-                ChannelFuture f = channel.writeAndFlush(op);
+                ChannelFuture f = channel.write(op);
                 // Append to queue
                 outgoing.add(op);
                 // Add to opLog
@@ -300,6 +333,7 @@ public class EditorController {
             }
         };
         new Thread(task).start();
+//        Platform.runLater(task);
     }
 
     public void populateEditor(String string) {
