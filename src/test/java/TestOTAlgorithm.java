@@ -8,10 +8,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TestOTAlgorithm {
 
     public static void main(String[] args) {
-        testBatchedOT();
+        System.out.println("Testing batched inserts");
+        testBatchedInserts();
+        System.out.println("Testing batched deletes");
+        testBatchedDeletes();
+        System.out.println("testing batched insert-delete");
+        testBatchedInsertDelete();
+
     }
 
-    public static void testBatchedOT() {
+    private static void testBatchedOT() {
         Client clientA = new Client("Client A");
         Client clientB = new Client("Client B");
         Server server = new Server();
@@ -33,17 +39,115 @@ public class TestOTAlgorithm {
         test(server, clientA, b, clientB, a);
     }
 
+    private static void testBatchedInserts() {
+        Client clientA = new Client("Client A");
+        Client clientB = new Client("Client B");
+        Server server = new Server();
+        // Test1. Same position
+        Operation a = Operation.insertOperation(0, "12345");
+        Operation b = Operation.insertOperation(0, "67890");
+        test(server, clientA, a, clientB, b);
+        // Test2. A before B
+        a = Operation.insertOperation(3, "AAA");
+        b = Operation.insertOperation(6, "BBB");
+        test(server, clientA, a, clientB, b);
+        // Test3. B before A
+        a = Operation.insertOperation(7, "XXX");
+        b = Operation.insertOperation(5, "YYY");
+        test(server, clientA, a, clientB, b);
+    }
+
+    private static void testBatchedDeletes() {
+        Client clientA = new Client("Client A", true);
+        Client clientB = new Client("Client B", true);
+        Server server = new Server();
+        // Test1. Same position
+        Operation a = Operation.deleteOperation(3,6);
+        Operation b = Operation.deleteOperation(3,6);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test2. A before B
+        a = Operation.deleteOperation(2,5);
+        b = Operation.deleteOperation(6,8);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test3. B before A
+        a = Operation.deleteOperation(5, 9);
+        b = Operation.deleteOperation(1, 5);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test4. A covers B
+        a = Operation.deleteOperation(4, 8);
+        b = Operation.deleteOperation(5, 7);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test5. B covers A
+        a = Operation.deleteOperation(3, 8);
+        b = Operation.deleteOperation(2, 8);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test6. A and B partially overlap at A's left
+        a = Operation.deleteOperation(2, 6);
+        b = Operation.deleteOperation(4, 8);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test7. A and B partially overlap at B's left
+        a = Operation.deleteOperation(5, 8);
+        b = Operation.deleteOperation(2, 7);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+
+    }
+
+    private static void testBatchedInsertDelete() {
+        Client clientA = new Client("Client A", true);
+        Client clientB = new Client("Client B", true);
+        Server server = new Server();
+        // Test1. A inserts after B deletes
+        Operation a = Operation.insertOperation(5, "AAA");
+        Operation b = Operation.deleteOperation(1, 4);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test2. A inserts before B deletes
+        a = Operation.insertOperation(3, "AAA");
+        b = Operation.deleteOperation(4, 8);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+        // Test3. A inserts where B deletes
+        a = Operation.insertOperation(4, "AAA");
+        b = Operation.deleteOperation(3, 6);
+        test(server, clientA, a, clientB, b);
+        clientA.resetText();
+        clientB.resetText();
+    }
+
     private static void test(Server server, Client one, Operation a, Client two, Operation b) {
         a = one.generate(a);
         b = two.generate(b);
-        System.out.println(a);
-        System.out.println(b);
         Operation toSend = server.receive(a);
         two.receive(toSend);
         toSend = server.receive(b);
         one.receive(toSend);
-        System.out.println(one);
-        System.out.println(two);
+        compareClients(one, two);
+    }
+
+    private static void compareClients(Client a, Client b) {
+        if (a.text.equals(b.text)) {
+            System.out.println("PASS");
+        }
+        else {
+            System.out.println("ClientA: " + a);
+            System.out.println("ClientB: " + b);
+        }
     }
 
     private static void testSingleOT() {
@@ -207,6 +311,17 @@ class Client {
         numConnected += 1;
     }
 
+    public Client(String name, boolean initialText) {
+        this(name);
+        if (initialText) {
+            this.text = "01234567890";
+        }
+    }
+
+    public void resetText() {
+        text = "01234567890";
+    }
+
     public Operation generate(Operation op) {
         // 1. Apply operation locally
         text = TestOTAlgorithm.applyBatched(text, op);
@@ -254,7 +369,6 @@ class Client {
             out.add(cPrime);
         }
         text = TestOTAlgorithm.applyBatched(text, fromServer);
-        System.out.println(name + " is applying: " + fromServer);
         opsRcv += 1;
         return fromServer;
     }

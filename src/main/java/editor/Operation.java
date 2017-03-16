@@ -74,10 +74,10 @@ public class Operation implements Serializable {
     /**
      * Returns a delete operation; intended to be used for testing.
      */
-    public static Operation deleteOperation(int startPos, int finalPos) {
+    public static Operation deleteOperation(int left, int right) {
         Operation op = new Operation(DELETE);
-        op.leftIdx = startPos;
-        op.rightIdx = finalPos;
+        op.leftIdx = left;
+        op.rightIdx = right;
         return op;
     }
 
