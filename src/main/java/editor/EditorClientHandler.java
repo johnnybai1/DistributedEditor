@@ -36,7 +36,6 @@ public class EditorClientHandler extends SimpleChannelInboundHandler<Operation> 
                 Platform.runLater(() -> {
                     if (!controller.editing.get()) {
                         ctx.channel().flush();
-                        System.out.println("FLUSHING");
                     }
                 });
             }

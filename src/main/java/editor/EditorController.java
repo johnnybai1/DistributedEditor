@@ -106,8 +106,6 @@ public class EditorController {
     public void initialize() {
         editor.setWrapText(true); // Will be enabled upon connect
         editor.setDisable(true); // Will be enabled upon connect
-
-
         editor.setOnKeyTyped(event -> {
             // KeyTyped refers to keys pressed that can be displayed in the TextArea
             editing.set(true);
